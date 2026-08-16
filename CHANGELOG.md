@@ -4,6 +4,25 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Este archivo versiona ZAI mismo (el toolkit) — no los proyectos que lo usan,
 esos tienen su propio `CHANGELOG.md` que mantiene `zai-scribe`.
 
+## [0.5.0] - 2026-08-16
+
+### Added
+- `zai-practices-architecture` extendido con criterio de monolito vs
+  microservicios (con los casos concretos de recordatorios/notificaciones,
+  envío masivo de correo, y tiempo real), backends multi-cliente
+  (web + React Native), y cuándo micro-frontends amerita (casi nunca para
+  un equipo chico).
+- Skill nuevo `zai-practices-project-structure`: layouts concretos de
+  carpetas para monorepo pnpm, monolito full-stack, Next.js App Router, y
+  backend standalone.
+- Skill nuevo `zai-practices-release-notes`: cómo detectar si un proyecto
+  ya usa GitHub Releases antes de asumirlo, cómo traducir el changelog
+  técnico a release notes user-friendly, y cómo adaptarlas a anuncios de
+  Discord/X.
+- `zai-scribe` y `/zai-fase-close` ahora chequean (`gh release list`) si
+  el proyecto ya publica releases y, solo si es así, redactan y publican
+  una release note al cerrar una fase.
+
 ## [0.4.0] - 2026-08-16
 
 ### Added

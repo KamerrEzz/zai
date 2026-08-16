@@ -1,6 +1,6 @@
 ---
 name: zai-practices-architecture
-description: Use ONLY when deciding how to organize a project's high-level structure - layering, dependency direction, folder structure at the module/service level. Do not use for picking a specific design pattern inside a layer (see zai-practices-patterns) or for choosing a library (see the zai-stack-* skills).
+description: Use ONLY when deciding how to organize a project's high-level structure - layering, dependency direction, monolith vs microservices, multi-client backends (web + mobile), or micro-frontends. Do not use for picking a specific design pattern inside a layer (see zai-practices-patterns), for literal folder layouts (see zai-practices-project-structure), or for choosing a library (see the zai-stack-* skills).
 ---
 
 # Arquitectura: Hexagonal, Clean, Screaming - y cuando ninguna amerita
@@ -86,6 +86,82 @@ leyendo nombres de framework.
 Esto es ortogonal a hexagonal/clean - podes (y en general conviene)
 combinarlas: screaming a nivel de organizacion por dominio, hexagonal/clean
 dentro de cada modulo de dominio.
+
+## Backend multi-cliente: una API, varios frontends
+
+Si el mismo backend va a servir una web (Next.js) **y** una app (React
+Native), el backend no le pertenece a ninguno de los dos clientes - vive
+como su propio servicio, con su propio ciclo de deploy, y ninguno de los
+frontends le agrega lógica de negocio directamente (nada de escribir a la
+base de datos desde Server Actions de Next.js si React Native también
+necesita ese mismo dato/mutación - eso duplica la regla de negocio en dos
+lugares que se van a desincronizar).
+
+Esto es exactamente la condición que dispara `zai-stack-api-layer`
+(tRPC vs Server Actions + Zod): con **un solo consumidor** (solo la web),
+Server Actions alcanza y separar el backend es prematuro. En el momento
+que React Native (o cualquier segundo cliente) entra en escena, ya hay
+más de un consumidor tipado del mismo backend - ahí es cuando tRPC (o un
+backend HTTP/REST explícito con Express/NestJS, ver `zai-stack-backend-framework`)
+deja de ser una capa de más y pasa a ser la forma de no duplicar lógica.
+
+## Monolito vs microservicios: la señal no es el tamaño, es el ciclo de vida
+
+Separar algo en su propio servicio se justifica cuando ese algo tiene un
+**ciclo de vida distinto** al resto de la app - escala distinto, se
+despliega distinto, o falla de forma que no debería tirar abajo lo demás.
+No se justifica solo porque "así se hace en sistemas grandes" - un
+microservicio mal justificado agrega red, serialización, y un despliegue
+extra a mantener, a cambio de nada.
+
+Casos concretos, con el criterio aplicado:
+
+- **Recordatorios / notificaciones programadas**: candidato real a
+  servicio (o, más barato, a un worker dentro del mismo monorepo pero
+  proceso separado) apenas necesitás *scheduling* - algo tiene que
+  disparar en un momento futuro sin que un usuario esté haciendo una
+  request en ese instante. Esto es precisamente el terreno de
+  `zai-stack-queues` (BullMQ/pg-boss) - el "servicio" en la práctica
+  suele ser: la API encola el job, un worker separado (mismo repo,
+  proceso distinto) lo procesa. No hace falta que sea un repo/deploy
+  separado desde el día uno.
+- **Envío masivo de correos**: mismo patrón - encolar, no enviar sincrónico
+  dentro del request que lo dispara (un envío masivo síncrono bloquea la
+  respuesta y no tiene forma sana de reintentar fallos parciales). El
+  candidato a separar en su propio servicio aparece cuando el volumen es
+  alto y consistente (no un caso ocasional) y necesita su propio control
+  de rate limiting/backoff frente al proveedor de email, independiente
+  del resto de la app.
+- **Tiempo real (websockets/SSE/pub-sub)**: conexiones long-lived tienen
+  un perfil de recursos distinto al resto de una API HTTP request/response
+  (mantener miles de conexiones abiertas escala distinto a servir
+  requests cortas) - eso sí es una razón real de ciclo de vida distinto
+  para separarlo en su propio proceso/servicio, aunque comparta el mismo
+  dominio de datos que la API principal.
+
+Lo que las tres tienen en común: ninguna se justifica por "es una buena
+práctica separar servicios" en abstracto - se justifica porque cada una
+tiene una razón operacional concreta (scheduling, rate limiting externo,
+perfil de conexión distinto) que el monolito no resuelve bien. Si no
+identificás esa razón concreta para tu caso, es una feature más dentro
+del monolito, no un servicio nuevo.
+
+## Micro-frontends: casi nunca, para un equipo chico o solo
+
+Micro-frontends resuelven un problema organizacional (equipos distintos,
+con ciclos de release distintos, deployando partes independientes de la
+misma UI sin coordinarse entre sí) - no un problema técnico. Si sos un
+equipo chico o trabajás solo, ese problema no existe: coordinar tu propio
+release con vos mismo no tiene costo. El costo de micro-frontends
+(orquestación en runtime, duplicación de dependencias entre fragmentos,
+complejidad de estado compartido entre apps independientes) es real y se
+paga igual, exista o no el problema organizacional que lo justifica.
+
+Señal real para considerarlo: más de un equipo *independiente*
+desplegando partes de la misma superficie de UI en cadencias distintas.
+Fuera de eso, un monolito de frontend bien modularizado internamente
+(carpetas por dominio, ver `zai-practices-project-structure`) da el mismo
+beneficio de organización sin el costo de runtime.
 
 ## La sobre-arquitectura es un riesgo real, no una virtud por defecto
 

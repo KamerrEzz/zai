@@ -114,7 +114,7 @@ Ejemplo completo con salidas reales (no simulado): **`docs/GUIDE.md`**.
 | **`core`** | `.zai/state.json`, el gate que inyecta estado al contexto, `/zai-estado`, `/zai-init` | No — todo lo demás depende de él |
 | **`phases`** | 5 agentes (`zai-planner`, `zai-test-author`, `zai-implementer`, `zai-auditor`, `zai-scribe`), 6 comandos `/zai-fase-*`, Gate A (tests intocables), Gate B (typecheck/lint post-escritura), Gate D (bloqueo de commit, apagado de fábrica) | Sí |
 | **`stack`** | 5 skills `zai-stack-*` (árbol de decisión on-demand), Gate E (exige `context7` antes de dependencias jóvenes) | Sí |
-| **`practices`** | 8 skills `zai-practices-*` — commits, changelog, comentarios, tipado, arquitectura, patrones de diseño, seguridad defensiva (investigada con fuentes de 2025-2026), testing | Sí |
+| **`practices`** | 10 skills `zai-practices-*` — commits, changelog, comentarios, tipado, arquitectura (incl. multi-servicio/multi-cliente), estructura de carpetas, patrones de diseño, seguridad defensiva (investigada con fuentes de 2025-2026), testing, release notes/anuncios | Sí |
 
 Cada uno tiene su propio `module.json` en `modules/<nombre>/`. Instrucciones
 para agregar uno propio: `docs/MODULES.md`.

@@ -25,12 +25,25 @@ cosa.
   comando.
 - Si es 0: segui.
 
-## Paso 3 - delegar en zai-scribe
+## Paso 3 - chequear si el proyecto ya usa GitHub Releases
+
+```
+gh release list --limit 1
+```
+
+Si el comando falla porque no hay repo remoto en GitHub, o la lista viene
+vacia, el proyecto **no** usa releases - no es tu decision activarlos
+ahora (ver `zai-practices-release-notes`). Guardate el resultado (usa/no
+usa) para el paso siguiente.
+
+## Paso 4 - delegar en zai-scribe
 
 Invocá `zai-scribe` via `task` con: que fase se cierra, el spec de la fase,
-y un resumen del diff. `zai-scribe` no toca codigo y no tiene `bash` - si
-te devuelve algo que no sea contenido para `docs/adr/`, `CHANGELOG.md`, o
-la decision de bump, algo esta mal, no lo apliques.
+un resumen del diff, y el resultado del paso 3 (si el proyecto ya usa
+releases o no). `zai-scribe` no toca codigo y no tiene `bash` - si te
+devuelve algo que no sea contenido para `docs/adr/`, `CHANGELOG.md`, la
+decision de bump, o (solo si corresponde) una release note, algo esta
+mal, no lo apliques.
 
 Su respuesta te tiene que traer, explicito:
 - Si escribio un ADR o no, y por que (ver `modules/phases/agents/zai-scribe.md`
@@ -38,8 +51,10 @@ Su respuesta te tiene que traer, explicito:
   no te lo justifica, pediselo de nuevo).
 - La entrada de `CHANGELOG.md` ya escrita.
 - El tipo de bump (`major`/`minor`/`patch`) con su razon.
+- Si el paso 3 confirmo que el proyecto usa releases: el contenido
+  completo de la release note.
 
-## Paso 4 - bump de version
+## Paso 5 - bump de version
 
 Con el tipo de bump que te devolvio `zai-scribe`:
 
@@ -47,7 +62,17 @@ Con el tipo de bump que te devolvio `zai-scribe`:
 pnpm --dir "$(cat ~/.config/opencode/.zai-repo-path)" exec tsx scripts/zai-bump-version.ts "$(pwd)" <major|minor|patch>
 ```
 
-## Paso 5 - transicionar
+## Paso 6 - publicar el release, solo si el paso 3 confirmo que el proyecto ya los usa
+
+```
+gh release create <version-nueva> --title "<titulo que te dio zai-scribe>" --notes-file <archivo con el contenido que te dio zai-scribe>
+```
+
+Si el paso 3 dijo que el proyecto no usa releases, saltate este paso
+entero - no crees el primer release de un proyecto sin que te lo hayan
+pedido explicitamente.
+
+## Paso 7 - transicionar
 
 ```
 pnpm --dir "$(cat ~/.config/opencode/.zai-repo-path)" exec tsx scripts/zai-transition.ts "$(pwd)" documented
@@ -57,6 +82,7 @@ pnpm --dir "$(cat ~/.config/opencode/.zai-repo-path)" exec tsx scripts/zai-trans
 
 Confirmame: que la suite completa paso (pegame el resumen, no el log
 entero), si se escribio un ADR (y cual, o por que no), la entrada del
-changelog, la version nueva, y que la fase cerro en `documented`. Si hay
-una fase siguiente planeada en `docs/tasks.md`, avisame que el proximo paso
-es `/zai-fase-start`.
+changelog, la version nueva, si se publico un release (o por que no
+correspondia), y que la fase cerro en `documented`. Si hay una fase
+siguiente planeada en `docs/tasks.md`, avisame que el proximo paso es
+`/zai-fase-start`.
