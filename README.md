@@ -166,6 +166,8 @@ ignorar.
 | `ZAI_PHASES_DISABLE_GATE_B` | Apaga solo Gate B (typecheck/lint post-escritura). |
 | `ZAI_ALLOW_COMMIT` | Bypassea Gate D para ese commit puntual, aunque esté prendido en `.zai/config.json`. |
 | `ZAI_STACK_DISABLE_GATE_CONTEXT7` | Apaga solo Gate E (exige `context7` antes de dependencias jóvenes). |
+| `ZAI_CORE_DISABLE_STATE_PROTECTION` | Apaga el gate que bloquea la escritura directa de `.zai/state.json` (solo permite mutarlo vía los scripts `zai-*.ts`). |
+| `ZAI_PHASES_SKIP_RED_VERIFICATION` | Salta la verificación mecánica de `zai-transition.ts` al pasar a `red` (correr la suite y confirmar que falla). Solo para bootstrapping sin test runner configurado todavía. |
 
 Ninguna necesita un valor específico — alcanza con que exista
 (`ZAI_DISABLE_GATES=1`, `=true`, lo que sea).

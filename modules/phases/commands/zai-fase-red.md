@@ -36,6 +36,12 @@ el runner lo soporta.
 pnpm --dir "$(cat ~/.config/opencode/.zai-repo-path)" exec tsx scripts/zai-transition.ts "$(pwd)" red
 ```
 
+Este script corre la suite del proyecto **por su cuenta** antes de aceptar
+la transicion a `red` - no confia en tu palabra de que fallan. Si la suite
+pasa (exit 0), el script rechaza la transicion con un error explicito; no
+lo reintentes con `ZAI_PHASES_SKIP_RED_VERIFICATION` salvo que de verdad
+sea un bootstrap sin test runner configurado todavia.
+
 ## Cierre
 
 Confirmame que tests se escribieron, que efectivamente fallan (pegame la

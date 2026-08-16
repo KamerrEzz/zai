@@ -311,3 +311,69 @@ arreglado la TUI.
 - `.gitignore` y `tsconfig.json` simplificados: ya no excluyen
   `agents/commands/plugins/skill` porque esas carpetas nunca vuelven a
   aparecer dentro de este repo (se generan enteramente en `CONFIG_ROOT`).
+
+## 16. Bug real (v0.9.0): plugins con exports de mas rompian la carga de OpenCode
+
+`zai.stack.ts` y `zai.phases.ts` exportaban, ademas del plugin, sus
+funciones puras internas (`extractAddedPackages`, `extractPatchPaths`,
+`gateA`/`gateB`/`gateD`, etc.) "para que los tests las importaran
+directamente". OpenCode's plugin loader trata **cualquier export nombrado
+o default de un archivo dentro de `plugins/`** como candidato a factory de
+`Plugin` (confirmado en el skill nativo `customize-opencode`: "A plugin
+module exports `default` (or any named export) of type `Plugin`") y lo
+invoca — eso llamaba a `extractAddedPackages(pluginInputObject)` en vez de
+`extractAddedPackages("pnpm add zod")`, y `pluginInputObject.match` no
+existe, asi que tiraba `TypeError`. Esa falla en cascada dejaba el
+bootstrap de config (y el listado de providers, necesario para la TUI y
+`opencode providers login`) en `null`.
+
+**Como se encontro**: corriendo `opencode` de verdad, interactivamente, en
+un proyecto real (`misseconomie`) — no en el toy-project test de sesion 3,
+que aparentemente no ejercitaba este camino de carga. `zai.core.ts` (que
+siempre exporto unicamente el plugin) nunca fallo — esa fue la pista que
+confirmo la causa antes de mirar el log.
+
+**Fix**: los dos archivos ahora exportan EXACTAMENTE el plugin (named +
+default, mismo patron que `zai.core.ts`). Los helpers quedan privados;
+tests los alcanzan via `Plugin.testHelpers` (una propiedad del objeto
+funcion ya exportado, no un export nuevo del modulo). Se agrego un test de
+regresion por archivo de plugin (`Object.keys(mod)` tiene que ser
+exactamente `["default", "<NombrePlugin>"]`) para que este bug no pueda
+reintroducirse en silencio.
+
+## 17. Un modelo debil puede saltearse cualquier instruccion de prompt - las gates mecanicas no
+
+Con Qwen 3.6 como unico modelo disponible (usuario sin acceso a
+Claude/GPT), la primera prueba real del loop de fases (`/zai-fase-red`)
+mostro que un modelo que no sigue instrucciones con disciplina hace
+exactamente lo que un prompt, por mas explicito, no puede impedir:
+escribio `.zai/state.json` **directamente** con la herramienta de
+escritura marcando `phase_state: "red"` a mano, y afirmo "los tests fallan
+como corresponde" sin correr la suite ni una vez (cero invocaciones de
+`pnpm test`/`vitest` en el log de esa sesion).
+
+Esto no se arregla con un prompt mas claro - un modelo que decide
+saltearse un paso lo hace sin importar cuan explicitas esten las
+instrucciones. Se agregaron dos mecanismos reales (no de prompt), mismo
+principio que ya prueban Gate A/B:
+
+1. **Gate nuevo en `zai.core.ts`**: bloquea la escritura directa de
+   `.zai/state.json` con las herramientas `edit`/`write`/`apply_patch` -
+   igual que Gate A bloquea escribir tests en `green`. Vive en `core`
+   (no en `phases`) porque `.zai/state.json` es del `core` ("unico
+   escritor real", `docs/MODULES.md`) y esta proteccion tiene sentido
+   exista o no `phases` instalado.
+2. **`scripts/zai-transition.ts` corre la suite el mismo** antes de
+   aceptar una transicion a `red` - si el exit code es `0`, rechaza la
+   transicion con un error explicito, en vez de confiar en que el agente
+   la corrio y penso lo correcto. Solo se agrego para `red`: es la unica
+   transicion de la maquina de estados sin ningun respaldo mecanico
+   previo (`green` ya esta protegido por Gate A, `documented` por la
+   corrida completa de suite en `/zai-fase-close`, `audited` por el
+   propio auditor con contexto limpio).
+
+Ninguno de los dos intenta distinguir mecanicamente "fallo por aserción
+real" de "fallo por error de sintaxis" - eso sigue siendo criterio del
+agente en el prompt de `/zai-fase-red`, igual que antes. La mejora cierra
+el hueco mas grave (afirmar sin ejecutar, mutar estado sin pasar por el
+camino validado), no reemplaza el juicio fino por una heuristica fragil.

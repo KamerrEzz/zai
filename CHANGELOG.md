@@ -4,6 +4,28 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Este archivo versiona ZAI mismo (el toolkit) — no los proyectos que lo usan,
 esos tienen su propio `CHANGELOG.md` que mantiene `zai-scribe`.
 
+## [0.11.0] - 2026-08-16
+
+### Added
+- Gate nuevo en `zai.core.ts`: bloquea la escritura directa de
+  `.zai/state.json` con `edit`/`write`/`apply_patch` (mismo mecanismo que
+  Gate A) - fuerza a pasar por los scripts validados
+  (`zai-init-state.ts`, `zai-transition.ts`, `zai-record-blockers.ts`,
+  `zai-start-next-phase.ts`). Escape hatch:
+  `ZAI_CORE_DISABLE_STATE_PROTECTION`.
+- `scripts/zai-transition.ts` corre la suite de tests del proyecto por su
+  cuenta antes de aceptar una transicion a `red`, y rechaza la transicion
+  si exit code es `0` - ya no confia en que el agente la corrio de
+  verdad. Escape hatch: `ZAI_PHASES_SKIP_RED_VERIFICATION` (para
+  bootstrapping sin test runner configurado todavia).
+
+### Why
+Con un modelo mas debil que no sigue instrucciones de prompt con
+disciplina (Qwen 3.6, primera prueba real del loop de fases), ningun
+texto de instruccion evita que el agente escriba el estado a mano o
+afirme sin verificar - hacia falta que fuera mecanicamente imposible, no
+solo pedido. Ver `docs/DECISIONS.md` punto 17.
+
 ## [0.10.0] - 2026-08-16
 
 ### Changed
