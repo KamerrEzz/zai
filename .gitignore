@@ -1,0 +1,13 @@
+# dependencias
+node_modules/
+
+# cache de otra herramienta preexistente en la vieja ubicacion de este
+# repo, no es de ZAI - deberia no aplicar mas, se deja por si acaso
+.atl/
+
+# estado de proyecto (este repo no es un proyecto "consumidor" de ZAI,
+# pero si algun dia se prueba localmente, no se versiona)
+/.zai/
+
+*.log
+.DS_Store

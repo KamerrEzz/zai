@@ -1,0 +1,5 @@
+{
+  "name": "core",
+  "description": "Estado de proyecto (.zai/state.json), gate de inyeccion de contexto, comandos base de ZAI",
+  "enabled": true
+}

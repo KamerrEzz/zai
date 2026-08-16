@@ -1,0 +1,5 @@
+{
+  "name": "phases",
+  "description": "Loop de fases: agentes especializados, comandos /zai-fase-*, gates de tests intocables y verificacion post-escritura",
+  "enabled": true
+}

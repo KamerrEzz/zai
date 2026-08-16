@@ -1,0 +1,5 @@
+{
+  "name": "stack",
+  "description": "Arbol de decision de stack (skills zai-stack-*) y el gate que exige consultar context7 antes de usar dependencias jovenes",
+  "enabled": true
+}
