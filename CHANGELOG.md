@@ -4,6 +4,31 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Este archivo versiona ZAI mismo (el toolkit) — no los proyectos que lo usan,
 esos tienen su propio `CHANGELOG.md` que mantiene `zai-scribe`.
 
+## [0.7.0] - 2026-08-16
+
+### Changed
+- Los skills `zai-practices-architecture`, `zai-practices-patterns`, y
+  `zai-practices-security` — cada uno mezclando varios temas no
+  relacionados en un solo archivo — se partieron en 12 skills chicos y
+  específicos, con el mismo criterio de granularidad que ya usaba
+  `zai-stack-*`: `architecture-layering` (hexagonal/clean/screaming),
+  `architecture-multi-client` (BFF), `architecture-service-boundaries`
+  (monolito vs microservicios), `architecture-frontend-composition`
+  (micro-frontends), `patterns-structural` (Repository/Strategy/Factory/
+  Adapter/Decorator/DI), `patterns-notifications` (escenarios de
+  notificaciones), `patterns-resilience` (Circuit Breaker/Idempotencia),
+  `patterns-distributed-data` (CQRS/Event Sourcing/Saga),
+  `security-auth` (JWT), `security-supply-chain` (npm supply chain,
+  prompt injection en agentes de IA), `security-injection` (IDOR, SSRF,
+  prototype pollution). Cada uno cita fuentes reales (papers/writeups
+  originales de los patrones, proyectos open source que los implementan,
+  o casos de empresas reales) en vez de solo criterio propio.
+
+### Added
+- Skill nuevo `zai-practices-architecture-realtime`: criterio concreto de
+  WebSockets vs Server-Sent Events vs polling, con código y el caso real
+  de Discord como referencia de escala.
+
 ## [0.6.0] - 2026-08-16
 
 ### Changed

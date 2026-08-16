@@ -1,20 +1,19 @@
 ---
 name: zai-practices-project-structure
-description: Use ONLY when laying out the actual folder/directory structure of a new project or package - monorepo vs single app, where routes/domain/shared code live. Do not use for deciding WHETHER to split into services or how layers depend on each other (see zai-practices-architecture) - this is the literal folder tree once that decision is made.
+description: Use ONLY when laying out the actual folder/directory structure of a new project or package - monorepo vs single app, where routes/domain/shared code live. Do not use for deciding WHETHER to split into services or how layers depend on each other (see zai-practices-architecture-layering and zai-practices-architecture-service-boundaries) - this is the literal folder tree once that decision is made.
 ---
 
 # Estructura de carpetas: el layout concreto, no la teoría
 
 Este skill da el arbol de carpetas real para las cuatro formas mas
 comunes de organizar un proyecto. La decision de *si* separar en
-servicios/monorepo vive en `zai-practices-architecture` - esto es *como*
-se ve una vez decidido.
+servicios/monorepo vive en `zai-practices-architecture-service-boundaries`
+- esto es *como* se ve una vez decidido.
 
 ## Monorepo pnpm (API + web + mobile + paquetes compartidos)
 
 El caso tipico cuando mantenes una API consumida por una web Next.js **y**
-una app React Native (ver `zai-practices-architecture`, seccion de backend
-multi-cliente):
+una app React Native (ver `zai-practices-architecture-multi-client`):
 
 ```
 mi-proyecto/
@@ -39,7 +38,7 @@ Reglas de esta estructura, no solo la forma:
   entre `api` y los clientes (tipos de Zod, tipos de tRPC si corresponde).
   Ni `web` ni `mobile` redefinen sus propios tipos de la respuesta de la
   API - los importan de ahi. Redefinirlos en cada cliente es exactamente
-  el tipo de duplicacion que `zai-practices-architecture` advierte que
+  el tipo de duplicacion que `zai-practices-architecture-multi-client` advierte que
   pasa cuando el backend "le pertenece" a un cliente en vez de ser su
   propio servicio.
 - **Nada dentro de `apps/api` importa de `apps/web` ni `apps/mobile`**, ni
@@ -97,7 +96,7 @@ Dentro de `app/`, ademas de lo de arriba:
 
 ## Backend standalone (Express/NestJS)
 
-Combinando screaming + hexagonal (ver `zai-practices-architecture`):
+Combinando screaming + hexagonal (ver `zai-practices-architecture-layering`):
 
 ```
 apps/api/
@@ -131,5 +130,6 @@ que tocar archivos en tres carpetas de "capas" distintas para algo que es
 conceptualmente una sola cosa, la estructura esta peleando contra vos, no
 ayudando - revisá si el nivel de separacion (monorepo, capas
 domain/infrastructure) de verdad lo justifica tu proyecto ahora, no el
-que te gustaria tener en un año. Ver `zai-practices-architecture` para el
-criterio de cuando cada nivel de separacion amerita.
+que te gustaria tener en un año. Ver `zai-practices-architecture-layering`
+y `zai-practices-architecture-service-boundaries` para el criterio de
+cuando cada nivel de separacion amerita.

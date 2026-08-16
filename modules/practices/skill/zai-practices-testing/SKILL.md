@@ -161,7 +161,7 @@ distinto y elegir el equivocado hace el test más frágil de lo necesario:
 ## Testear un contrato compartido entre clientes (web + mobile)
 
 Si el mismo backend sirve una app web y una app React Native (ver
-`zai-practices-architecture`, sección de backends multi-cliente), el
+`zai-practices-architecture-multi-client`), el
 riesgo real no es "¿la función hace lo que dice?" sino "¿el contrato que
 ambos clientes asumen sigue siendo el que el backend expone?" - un campo
 renombrado en la respuesta de `/api/orders` rompe silenciosamente al
@@ -190,8 +190,8 @@ cliente que menos se probó manualmente.
 
 ## Testear trabajo asíncrono (colas, workers)
 
-Un worker que consume de una cola (ver `zai-practices-patterns`, sección
-de notificaciones en alto volumen) no se testea disparando la cola real -
+Un worker que consume de una cola (ver `zai-practices-patterns-notifications`)
+no se testea disparando la cola real -
 se testea la función del worker de forma aislada, con la cola como
 frontera mockeada, y por separado se verifica que el job se encoló con
 el payload correcto:

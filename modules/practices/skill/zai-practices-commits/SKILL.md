@@ -76,7 +76,7 @@ fix(auth): rechazar tokens JWT con alg "none"
 
 El middleware aceptaba el header alg sin validarlo contra una lista
 fija, permitiendo bypass de la verificacion de firma. Ver
-zai-practices-security para el patron completo.
+zai-practices-security-auth para el patron completo.
 ```
 
 ```
