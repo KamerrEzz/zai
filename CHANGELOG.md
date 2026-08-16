@@ -4,6 +4,35 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Este archivo versiona ZAI mismo (el toolkit) — no los proyectos que lo usan,
 esos tienen su propio `CHANGELOG.md` que mantiene `zai-scribe`.
 
+## [0.9.0] - 2026-08-16
+
+### Fixed
+- **Bug critico que rompia la TUI de OpenCode y `providers list` en
+  cualquier proyecto con ZAI instalado.** `zai.stack.ts` y `zai.phases.ts`
+  exportaban sus funciones internas ademas del plugin "para que los tests
+  las importaran" - OpenCode trata cualquier export nombrado/default de un
+  archivo de plugin como un candidato a `Plugin` e intenta invocarlo, asi
+  que llamaba a `extractAddedPackages`/`extractPatchPaths` con el objeto
+  interno de OpenCode en vez de un string, tiraba `TypeError`, y esa falla
+  en cascada dejaba el bootstrap de config (y el listado de providers) en
+  null. Encontrado recien al correr `opencode` de verdad de forma
+  interactiva - la sospecha anterior (que el repo viviera dentro de
+  `~/.config/opencode`) no era la causa real. Los dos archivos ahora
+  exportan unicamente el plugin (mismo patron que `zai.core.ts`, que nunca
+  fallo); los helpers quedan privados y se exponen a los tests via
+  `Plugin.testHelpers` (una propiedad, no un export nuevo). Se agrego un
+  test de regresion por archivo que falla si se vuelve a exportar algo de
+  mas.
+
+### Added
+- Comando nuevo `/zai-vision`: alternativa a `/zai-init` para cuando la
+  idea del proyecto ya esta completa. En vez de interrogar de a una
+  pregunta, recibe el volcado completo de una, separa explicitamente "esto
+  entendi" de "esto necesito que confirmes" (preguntas agrupadas en un
+  solo mensaje), y propone un `docs/VISION.md` desglosado por area
+  funcional junto con un roadmap de fases tentativo para ajustar en
+  bloque. `/zai-init` sigue igual, sin cambios.
+
 ## [0.8.0] - 2026-08-16
 
 ### Changed

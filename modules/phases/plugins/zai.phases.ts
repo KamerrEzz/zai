@@ -9,9 +9,19 @@
 // location but incorrectly from the INSTALLED location (they are different
 // directories) - or vice versa, depending on how it's written. Rather than
 // write an import path that is only valid post-install, this file has zero
-// imports beyond node: builtins, and its pure helper functions are
-// exported so modules/phases/plugins/__tests__/zai.phases.test.ts can test
-// them directly from source.
+// imports beyond node: builtins.
+//
+// This file exports EXACTLY ONE thing (ZaiPhasesPlugin, both named and
+// default): OpenCode's plugin loader treats every top-level named/default
+// export as a candidate Plugin factory and invokes it - this file used to
+// also export its pure helpers and gate functions (extractPatchPaths,
+// gateA, gateB, gateD, etc.) "so tests could import them directly", which
+// made the loader call them with the wrong argument shape and crash
+// config bootstrap entirely (real bug, found by actually running
+// `opencode` interactively - see docs/DECISIONS.md point 16). Every helper
+// below is a private module-level function; tests reach them only via
+// `ZaiPhasesPlugin.testHelpers` (attached as a property at the bottom of
+// this file, not a separate export) - never re-add `export` to them.
 //
 // Every mechanism this file relies on is verified against the real
 // v1.18.18 source in docs/RESEARCH.md section 9:
@@ -62,7 +72,7 @@ type Plugin = (input: PluginContext) => Promise<Hooks>
 // uses ("**" = any depth, "*" = anything but "/"). Not a general-purpose
 // glob library - deliberately small, see the file header for why this file
 // has no dependencies.
-export function globToRegExp(pattern: string): RegExp {
+function globToRegExp(pattern: string): RegExp {
   let out = "^"
   let i = 0
   while (i < pattern.length) {
@@ -95,7 +105,7 @@ export function globToRegExp(pattern: string): RegExp {
   return new RegExp(out)
 }
 
-export function matchesAnyGlob(relativePath: string, globs: string[]): boolean {
+function matchesAnyGlob(relativePath: string, globs: string[]): boolean {
   const normalized = relativePath.split("\\").join("/")
   return globs.some((glob) => globToRegExp(glob).test(normalized))
 }
@@ -104,7 +114,7 @@ export function matchesAnyGlob(relativePath: string, globs: string[]): boolean {
 // files an apply_patch call touches, without reimplementing the full
 // parser in packages/opencode/src/patch/index.ts (see docs/RESEARCH.md
 // section 9 for the exact marker lines this mirrors).
-export function extractPatchPaths(patchText: string): string[] {
+function extractPatchPaths(patchText: string): string[] {
   const paths: string[] = []
   const lines = patchText.split(/\r?\n/)
   const markers = ["*** Add File: ", "*** Delete File: ", "*** Update File: ", "*** Move to: "]
@@ -159,7 +169,7 @@ async function readPhaseGateState(directory: string): Promise<LiteState | null> 
 
 // --- Gate A: tests untouchable in green ---
 
-export async function gateA(
+async function gateA(
   directory: string,
   input: ToolExecuteBeforeInput,
   output: ToolExecuteBeforeOutput,
@@ -258,7 +268,7 @@ async function runLint(directory: string, filePath: string): Promise<string | nu
   }
 }
 
-export async function gateB(
+async function gateB(
   directory: string,
   input: ToolExecuteAfterInput,
   output: ToolExecuteAfterOutput,
@@ -340,7 +350,7 @@ async function changelogChangedInWorkingTree(directory: string): Promise<boolean
   }
 }
 
-export async function gateD(
+async function gateD(
   directory: string,
   input: ToolExecuteBeforeInput,
   output: ToolExecuteBeforeOutput,
@@ -398,3 +408,7 @@ export const ZaiPhasesPlugin: Plugin = async ({ directory }) => {
 }
 
 export default ZaiPhasesPlugin
+
+// Test-only surface. Not a module export - see the file header for why.
+const testHelpers = { globToRegExp, matchesAnyGlob, extractPatchPaths, gateA, gateB, gateD }
+;(ZaiPhasesPlugin as unknown as { testHelpers: typeof testHelpers }).testHelpers = testHelpers

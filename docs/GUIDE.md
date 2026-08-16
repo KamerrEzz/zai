@@ -63,8 +63,9 @@ Buscá estas claves en la salida:
   (salvo que hayas desactivado `phases` o `stack`).
 - `"agent"`: `zai-planner`, `zai-test-author`, `zai-implementer`,
   `zai-auditor`, `zai-scribe`.
-- `"command"`: `zai-init`, `zai-estado`, `zai-fase-start`, `zai-fase-red`,
-  `zai-fase-green`, `zai-fase-audit`, `zai-fase-fix`, `zai-fase-close`.
+- `"command"`: `zai-init`, `zai-vision`, `zai-estado`, `zai-fase-start`,
+  `zai-fase-red`, `zai-fase-green`, `zai-fase-audit`, `zai-fase-fix`,
+  `zai-fase-close`.
 
 ```sh
 opencode debug skill
@@ -85,16 +86,13 @@ Si algo de esto falta, corré `pnpm install:zai` de nuevo desde el repo y
 revisá la salida por errores — el instalador falla fuerte (no en silencio)
 si un archivo ya existe y no lo puso él.
 
-## 4. Primer uso: `/zai-init`
+## 4. Primer uso: `/zai-init` o `/zai-vision`
 
-Parado en la raíz de **tu** proyecto (no de ZAI), con OpenCode corriendo:
+Parado en la raíz de **tu** proyecto (no de ZAI), con OpenCode corriendo,
+hay dos puntos de entrada según qué tan armada tengas la idea todavía.
 
-```
-/zai-init
-```
-
-Te interroga, una pregunta por vez — no vas a ver una lista de preguntas
-de una, va esperando cada respuesta:
+**`/zai-init`** — la idea se está armando sobre la marcha. Te interroga,
+una pregunta por vez, esperando cada respuesta antes de la siguiente:
 
 1. Nombre del proyecto.
 2. Qué problema resuelve / para quién.
@@ -106,6 +104,19 @@ te pregunta en qué fases pensás dividir el trabajo — vos las proponés, no
 el agente — y arma `docs/tasks.md` más el spec de la fase 1 en
 `docs/phases/01-<nombre>.md`. Al final, `.zai/state.json` queda escrito
 con la fase 1 en `planning`.
+
+**`/zai-vision`** — ya tenés la idea completa y no querés el ida y vuelta
+de a una pregunta. Contás todo de una, en un solo mensaje. El agente te
+responde con dos listas — "esto entendí" y "esto necesito que confirmes"
+(agrupadas en un solo mensaje, no una pregunta por turno) — y con eso
+escribe un `docs/VISION.md` más desarrollado (desglosado por área
+funcional, con una sección de "decisiones abiertas" para lo que quedó sin
+confirmar) y **propone** un roadmap de fases para que ajustes en bloque en
+vez de armarlo de cero. Mismo resultado final: `.zai/state.json`,
+`docs/tasks.md`, spec de la fase 1.
+
+Cualquiera de los dos deja el proyecto en el mismo punto — elegí según
+cuánto tenés ya decidido.
 
 Confirmalo:
 

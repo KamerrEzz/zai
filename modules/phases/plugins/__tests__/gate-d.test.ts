@@ -6,7 +6,9 @@ import { promisify } from "node:util"
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest"
 
-import { gateD } from "../zai.phases.js"
+import { ZaiPhasesPlugin } from "../zai.phases.js"
+
+const { gateD } = (ZaiPhasesPlugin as any).testHelpers
 
 const execFileAsync = promisify(execFile)
 

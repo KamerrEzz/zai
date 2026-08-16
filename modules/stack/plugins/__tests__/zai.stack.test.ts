@@ -1,12 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-import {
-  checkPackageAge,
-  extractAddedPackages,
-  gateContext7,
-  isContext7Tool,
-  stripVersionSpec,
-} from "../zai.stack.js"
+import { ZaiStackPlugin } from "../zai.stack.js"
+
+// OpenCode's plugin loader treats every top-level named/default export as
+// a candidate Plugin factory and invokes it - a stray helper export here
+// crashes config bootstrap for the whole session (see docs/DECISIONS.md
+// point 16). This guards against silently reintroducing that.
+it("exports exactly the plugin - default and named ZaiStackPlugin, nothing else", async () => {
+  const mod = await import("../zai.stack.js")
+  expect(Object.keys(mod).sort()).toEqual(["ZaiStackPlugin", "default"])
+})
+
+const { checkPackageAge, extractAddedPackages, gateContext7, isContext7Tool, stripVersionSpec } = (
+  ZaiStackPlugin as any
+).testHelpers
 
 describe("isContext7Tool", () => {
   it("matches typical MCP-prefixed context7 tool ids", () => {

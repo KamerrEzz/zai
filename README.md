@@ -72,7 +72,7 @@ opencode debug config
 ```
 
 Deberías ver `zai.core.ts`, `zai.phases.ts` y `zai.stack.ts` en `"plugin"`,
-los cinco agentes `zai-*` en `"agent"`, los ocho comandos `/zai-*` en
+los cinco agentes `zai-*` en `"agent"`, los nueve comandos `/zai-*` en
 `"command"`. Con `opencode debug skill` deberías ver los cinco skills
 `zai-stack-*` y los diecinueve `zai-practices-*`.
 
@@ -91,6 +91,14 @@ Te va a preguntar, de a una: nombre del proyecto, qué resuelve, qué queda
 afuera, y después las fases en las que pensás dividir el trabajo. Al
 terminar tenés `.zai/state.json`, `docs/VISION.md`, `docs/tasks.md`, y el
 spec de la fase 1.
+
+¿Ya tenés la idea completa y no querés contestar de a una pregunta? Usá
+`/zai-vision` en su lugar: contás todo de una, el agente separa "esto
+entendí" de "esto necesito que confirmes" en un solo mensaje (no te
+interroga de a una), y te propone un `docs/VISION.md` y un roadmap de
+fases completos para corregir en bloque. Mismo resultado final
+(`.zai/state.json`, `docs/tasks.md`, spec de la fase 1) por un camino
+más rápido cuando la idea ya está madura.
 
 De ahí, el loop por cada fase:
 
@@ -111,7 +119,7 @@ Ejemplo completo con salidas reales (no simulado): **`docs/GUIDE.md`**.
 
 | Módulo | Qué trae | ¿Se puede desactivar? |
 |---|---|---|
-| **`core`** | `.zai/state.json`, el gate que inyecta estado al contexto, `/zai-estado`, `/zai-init` | No — todo lo demás depende de él |
+| **`core`** | `.zai/state.json`, el gate que inyecta estado al contexto, `/zai-estado`, `/zai-init` (interrogatorio de a una pregunta), `/zai-vision` (volcado libre, para cuando la idea ya está completa) | No — todo lo demás depende de él |
 | **`phases`** | 5 agentes (`zai-planner`, `zai-test-author`, `zai-implementer`, `zai-auditor`, `zai-scribe`), 6 comandos `/zai-fase-*`, Gate A (tests intocables), Gate B (typecheck/lint post-escritura), Gate D (bloqueo de commit, apagado de fábrica) | Sí |
 | **`stack`** | 5 skills `zai-stack-*` (árbol de decisión on-demand), Gate E (exige `context7` antes de dependencias jóvenes) | Sí |
 | **`practices`** | 19 skills `zai-practices-*`, cada uno enfocado en un solo tema (mismo criterio de granularidad que `stack`) — commits, changelog, comentarios, tipado, estructura de carpetas, testing, release notes/anuncios, 5 de arquitectura (capas, multi-cliente/BFF, límites de servicio, micro-frontends, tiempo real), 4 de patrones (estructurales, notificaciones, resiliencia, datos distribuidos), 3 de seguridad defensiva (auth/JWT, supply chain, inyección) — con ejemplos de código y fuentes reales (2025-2026 y proyectos OSS) | Sí |

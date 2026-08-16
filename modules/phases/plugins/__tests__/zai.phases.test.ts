@@ -1,6 +1,17 @@
 import { describe, expect, it } from "vitest"
 
-import { extractPatchPaths, globToRegExp, matchesAnyGlob } from "../zai.phases.js"
+import { ZaiPhasesPlugin } from "../zai.phases.js"
+
+// OpenCode's plugin loader treats every top-level named/default export as
+// a candidate Plugin factory and invokes it - a stray helper export here
+// crashes config bootstrap for the whole session (see docs/DECISIONS.md
+// point 16). This guards against silently reintroducing that.
+it("exports exactly the plugin - default and named ZaiPhasesPlugin, nothing else", async () => {
+  const mod = await import("../zai.phases.js")
+  expect(Object.keys(mod).sort()).toEqual(["ZaiPhasesPlugin", "default"])
+})
+
+const { extractPatchPaths, globToRegExp, matchesAnyGlob } = (ZaiPhasesPlugin as any).testHelpers
 
 describe("globToRegExp / matchesAnyGlob", () => {
   it("matches a simple double-star glob", () => {

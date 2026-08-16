@@ -4,7 +4,9 @@ import { join } from "node:path"
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest"
 
-import { gateA } from "../zai.phases.js"
+import { ZaiPhasesPlugin } from "../zai.phases.js"
+
+const { gateA } = (ZaiPhasesPlugin as any).testHelpers
 
 let projectDir: string
 

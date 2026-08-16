@@ -15,6 +15,18 @@
 // external failure mode (network, missing tool) degrades instead of
 // crashing the session.
 //
+// This file exports EXACTLY ONE thing (ZaiStackPlugin, both named and
+// default): OpenCode's plugin loader treats every top-level named/default
+// export as a candidate Plugin factory and invokes it - an earlier version
+// of this file also exported its pure helpers (extractAddedPackages,
+// stripVersionSpec, etc.) "so tests could import them directly", which
+// made the loader call them with the wrong argument shape and crash
+// config bootstrap entirely (real bug, found by actually running
+// `opencode` interactively - see docs/DECISIONS.md point 16). The helpers
+// are kept as private module-level functions and exposed to tests only
+// via `ZaiStackPlugin.testHelpers` (attached as a property below, not a
+// separate export) - never re-export them as `export function` here.
+//
 // Deliberate scope limit: this gate only watches dependencies added via
 // bash (pnpm add / npm install / yarn add). It does not try to detect a
 // dependency added by hand-editing package.json's "dependencies" object
@@ -46,11 +58,11 @@ type Plugin = () => Promise<Hooks>
 // for as long as the session does, not just for one hook call.
 const context7ConsultedSessions = new Set<string>()
 
-export function isContext7Tool(toolId: string): boolean {
+function isContext7Tool(toolId: string): boolean {
   return toolId.toLowerCase().includes("context7")
 }
 
-export function stripVersionSpec(spec: string): string {
+function stripVersionSpec(spec: string): string {
   if (spec.startsWith("@")) {
     const secondAt = spec.indexOf("@", 1)
     return secondAt === -1 ? spec : spec.slice(0, secondAt)
@@ -61,7 +73,7 @@ export function stripVersionSpec(spec: string): string {
 
 const ADD_COMMAND_PATTERN = /\b(?:pnpm\s+add|npm\s+(?:install|i)|yarn\s+add)\b(.*)/
 
-export function extractAddedPackages(command: string): string[] {
+function extractAddedPackages(command: string): string[] {
   const match = command.match(ADD_COMMAND_PATTERN)
   if (!match) return []
   const rest = match[1] ?? ""
@@ -72,9 +84,9 @@ export function extractAddedPackages(command: string): string[] {
     .map(stripVersionSpec)
 }
 
-export type AgeCheckResult = { young: boolean; reason: string }
+type AgeCheckResult = { young: boolean; reason: string }
 
-export async function checkPackageAge(pkgName: string): Promise<AgeCheckResult | null> {
+async function checkPackageAge(pkgName: string): Promise<AgeCheckResult | null> {
   try {
     const res = await fetch(`https://registry.npmjs.org/${encodeURIComponent(pkgName)}`, {
       signal: AbortSignal.timeout(REGISTRY_TIMEOUT_MS),
@@ -126,7 +138,7 @@ export async function checkPackageAge(pkgName: string): Promise<AgeCheckResult |
   }
 }
 
-export async function gateContext7(input: ToolExecuteBeforeInput, output: ToolExecuteBeforeOutput): Promise<void> {
+async function gateContext7(input: ToolExecuteBeforeInput, output: ToolExecuteBeforeOutput): Promise<void> {
   if (process.env[DISABLE_ALL_GATES_ENV_VAR] || process.env[DISABLE_CONTEXT7_GATE_ENV_VAR]) return
 
   if (isContext7Tool(input.tool)) {
@@ -170,3 +182,7 @@ export const ZaiStackPlugin: Plugin = async () => {
 }
 
 export default ZaiStackPlugin
+
+// Test-only surface. Not a module export - see the file header for why.
+const testHelpers = { isContext7Tool, stripVersionSpec, extractAddedPackages, checkPackageAge, gateContext7 }
+;(ZaiStackPlugin as unknown as { testHelpers: typeof testHelpers }).testHelpers = testHelpers
