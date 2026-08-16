@@ -28,7 +28,7 @@ demás.
 
 ## Qué construye
 
-Tres piezas, cada una un módulo instalable por separado:
+Cuatro piezas, cada una un módulo instalable por separado:
 
 1. **Estado de fase por proyecto** (`.zai/state.json`) — una máquina de
    estados validada (`planning → red → green → audited → documented`) que
@@ -43,6 +43,10 @@ Tres piezas, cada una un módulo instalable por separado:
    (Express vs NestJS, BullMQ vs pg-boss vs RabbitMQ, etc.) que se carga
    solo cuando aplica, más un gate que exige consultar documentación
    actualizada antes de usar una dependencia joven.
+4. **Buenas prácticas de ingeniería, también on-demand** — commits,
+   changelogs, comentarios, tipado, arquitectura, patrones de diseño,
+   seguridad defensiva y testing, con criterio real de cuándo aplica cada
+   cosa, no un catálogo genérico.
 
 ## Instalación
 
@@ -70,7 +74,7 @@ opencode debug config
 Deberías ver `zai.core.ts`, `zai.phases.ts` y `zai.stack.ts` en `"plugin"`,
 los cinco agentes `zai-*` en `"agent"`, los ocho comandos `/zai-*` en
 `"command"`. Con `opencode debug skill` deberías ver los cinco skills
-`zai-stack-*`.
+`zai-stack-*` y los ocho `zai-practices-*`.
 
 Paso a paso más largo, con ejemplos y qué hacer si algo no coincide con lo
 que ves: **`docs/GUIDE.md`**.
@@ -110,6 +114,7 @@ Ejemplo completo con salidas reales (no simulado): **`docs/GUIDE.md`**.
 | **`core`** | `.zai/state.json`, el gate que inyecta estado al contexto, `/zai-estado`, `/zai-init` | No — todo lo demás depende de él |
 | **`phases`** | 5 agentes (`zai-planner`, `zai-test-author`, `zai-implementer`, `zai-auditor`, `zai-scribe`), 6 comandos `/zai-fase-*`, Gate A (tests intocables), Gate B (typecheck/lint post-escritura), Gate D (bloqueo de commit, apagado de fábrica) | Sí |
 | **`stack`** | 5 skills `zai-stack-*` (árbol de decisión on-demand), Gate E (exige `context7` antes de dependencias jóvenes) | Sí |
+| **`practices`** | 8 skills `zai-practices-*` — commits, changelog, comentarios, tipado, arquitectura, patrones de diseño, seguridad defensiva (investigada con fuentes de 2025-2026), testing | Sí |
 
 Cada uno tiene su propio `module.json` en `modules/<nombre>/`. Instrucciones
 para agregar uno propio: `docs/MODULES.md`.

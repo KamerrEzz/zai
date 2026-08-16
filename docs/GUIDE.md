@@ -71,7 +71,9 @@ opencode debug skill
 ```
 
 Tiene que listar `zai-stack-backend-framework`, `zai-stack-queues`,
-`zai-stack-auth`, `zai-stack-api-layer`, `zai-stack-fresh-docs`.
+`zai-stack-auth`, `zai-stack-api-layer`, `zai-stack-fresh-docs`, y los
+ocho `zai-practices-*` (`commits`, `changelog`, `comments`, `typing`,
+`architecture`, `patterns`, `security`, `testing`).
 
 Si algo de esto falta, corré `pnpm install:zai` de nuevo desde el repo y
 revisá la salida por errores — el instalador falla fuerte (no en silencio)

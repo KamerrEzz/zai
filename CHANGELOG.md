@@ -4,6 +4,27 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Este archivo versiona ZAI mismo (el toolkit) — no los proyectos que lo usan,
 esos tienen su propio `CHANGELOG.md` que mantiene `zai-scribe`.
 
+## [0.4.0] - 2026-08-16
+
+### Added
+- Módulo `practices`: 8 skills `zai-practices-*` de ingeniería general,
+  cargadas on-demand — `commits` (Conventional Commits, atomicidad),
+  `changelog` (Keep a Changelog en profundidad, criterio de granularidad),
+  `comments` (el WHY no el WHAT, cuándo un comentario envejece mal),
+  `typing` (TypeScript: `any` vs `unknown`, uniones discriminadas,
+  `satisfies`, branded types), `architecture` (Hexagonal/Clean/Screaming,
+  y cuándo ninguna amerita), `patterns` (Repository/Strategy/Factory/
+  Adapter/Decorator/DI con criterio de cuándo SI y cuándo NO),
+  `security` (defensivo: OWASP Top 10:2025, supply chain — Shai-Hulud,
+  compromiso de axios —, prompt injection en agentes de código, JWT,
+  SSRF, prototype pollution; investigado con fuentes de 2025-2026, no
+  solo conocimiento de entrenamiento), y `testing` (comportamiento vs
+  implementación, mocking en los bordes, con el bug real de Gate B de
+  esta misma sesión como caso de estudio).
+
+### Changed
+- `README.md` y `docs/GUIDE.md` actualizados con el módulo nuevo.
+
 ## [0.3.0] - 2026-08-15
 
 ### Added
