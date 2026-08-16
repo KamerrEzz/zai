@@ -123,3 +123,96 @@ donde vive el riesgo real elimina la posibilidad de detectarlo**. Para
 código que invoca herramientas externas, procesos, o el sistema de
 archivos de formas especificas de la plataforma, al menos un test tiene
 que correr contra lo real, no contra una simulacion de lo real.
+
+## Vocabulario de test doubles: no todos los "mocks" son mocks
+
+Usar "mock" para todo esconde una decisión real - cada tipo cumple un rol
+distinto y elegir el equivocado hace el test más frágil de lo necesario:
+
+- **Stub**: devuelve una respuesta fija, no verifica que lo hayan llamado.
+  Úsalo cuando solo te importa el dato de vuelta.
+  `const getRates = () => ({ USD: 1, EUR: 0.92 })`
+- **Spy**: como un stub, pero además registra cómo lo llamaron - úsalo
+  cuando el comportamiento que importa es "llamó a X con estos argumentos",
+  no solo el resultado. `vi.spyOn(emailer, "send")`
+- **Mock** (en sentido estricto): pre-programado con expectativas exactas
+  de llamada, y el test falla si no se cumplen exactamente. Es el más
+  acoplado a la implementación de los cuatro - reservalo para cuando el
+  *hecho de haber llamado* es literalmente el comportamiento a probar
+  (ej: "al fallar el pago, se debe notificar a soporte").
+- **Fake**: una implementación real pero simplificada (un repositorio en
+  memoria en vez de Postgres). Es el más caro de escribir y el que menos
+  miente - un `InMemoryOrderRepository` que respeta la misma interfaz que
+  el real detecta bugs de lógica que un stub jamás detectaría, sin pagar
+  el costo de una base de datos real en cada test.
+
+```ts
+✗ // "mock" que en realidad es un stub disfrazado - no verifica nada,
+  // solo esconde que el test no sabe qué está probando
+  const mockDb = { findUser: vi.fn().mockResolvedValue(fakeUser) }
+
+✓ // spy: el comportamiento que importa es que se llamó a `send`
+  // con el destinatario correcto, no solo que el resultado fue "ok"
+  const sendSpy = vi.spyOn(emailer, "send")
+  await notifyPasswordReset(user)
+  expect(sendSpy).toHaveBeenCalledWith(user.email, expect.objectContaining({ template: "reset" }))
+```
+
+## Testear un contrato compartido entre clientes (web + mobile)
+
+Si el mismo backend sirve una app web y una app React Native (ver
+`zai-practices-architecture`, sección de backends multi-cliente), el
+riesgo real no es "¿la función hace lo que dice?" sino "¿el contrato que
+ambos clientes asumen sigue siendo el que el backend expone?" - un campo
+renombrado en la respuesta de `/api/orders` rompe silenciosamente al
+cliente que nadie está mirando en ese momento.
+
+```ts
+// El contrato vive una sola vez (ver zai-practices-project-structure,
+// packages/shared-types) y el test de contrato lo valida contra la
+// respuesta REAL del handler, no contra lo que el handler "debería" hacer
+const OrderResponseSchema = z.object({
+  id: z.string(),
+  status: z.enum(["pending", "shipped", "delivered"]),
+  total: z.number(),
+})
+
+it("responde con la forma que ambos clientes esperan", async () => {
+  const response = await request(app).get("/api/orders/123")
+  expect(() => OrderResponseSchema.parse(response.body)).not.toThrow()
+})
+```
+
+Esto no reemplaza los tests de comportamiento del handler - es una capa
+extra que existe específicamente porque hay más de un consumidor que no
+se entera si el contrato cambia hasta que falla en producción, en el
+cliente que menos se probó manualmente.
+
+## Testear trabajo asíncrono (colas, workers)
+
+Un worker que consume de una cola (ver `zai-practices-patterns`, sección
+de notificaciones en alto volumen) no se testea disparando la cola real -
+se testea la función del worker de forma aislada, con la cola como
+frontera mockeada, y por separado se verifica que el job se encoló con
+el payload correcto:
+
+```ts
+it("encola un job de envío por cada destinatario", async () => {
+  const enqueueSpy = vi.spyOn(emailQueue, "add")
+  await scheduleDigestEmails(recipients)
+  expect(enqueueSpy).toHaveBeenCalledTimes(recipients.length)
+})
+
+it("el worker marca el job como fallido sin reintentar en errores de validación", async () => {
+  const job = { data: { email: "no-es-un-email" } }
+  await expect(processEmailJob(job)).rejects.toThrow("invalid email")
+  // un error de validación no es transitorio - reintentarlo no lo arregla,
+  // así que el test también documenta que NO debe ir a la cola de retry
+})
+```
+
+La pregunta que separa un buen test de worker de uno inútil: **¿este test
+distingue un error que vale la pena reintentar (la red falló) de uno que
+nunca va a andar aunque reintentes mil veces (el dato de entrada es
+inválido)?** Si no distingue eso, el worker real va a reintentar basura
+para siempre.

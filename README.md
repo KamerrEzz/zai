@@ -74,7 +74,7 @@ opencode debug config
 Deberías ver `zai.core.ts`, `zai.phases.ts` y `zai.stack.ts` en `"plugin"`,
 los cinco agentes `zai-*` en `"agent"`, los ocho comandos `/zai-*` en
 `"command"`. Con `opencode debug skill` deberías ver los cinco skills
-`zai-stack-*` y los ocho `zai-practices-*`.
+`zai-stack-*` y los diez `zai-practices-*`.
 
 Paso a paso más largo, con ejemplos y qué hacer si algo no coincide con lo
 que ves: **`docs/GUIDE.md`**.

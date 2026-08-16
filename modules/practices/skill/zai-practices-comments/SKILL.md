@@ -78,6 +78,37 @@ issue con dueño, no un comentario. Si no importa lo suficiente como para
 ser un issue, tampoco importa lo suficiente como para quedar como TODO
 permanente en el codigo - borralo.
 
+## Ejemplo: una eleccion que parece un error hasta que se explica
+
+```ts
+✗ // busca el usuario
+  function findUser(id: string) {
+    for (const user of allUsers) {
+      if (user.id === id) return user
+    }
+    return null
+  }
+  // busqueda lineal sobre un array - alguien que lo lea va a asumir
+  // que es descuido y lo va a "arreglar" a un Map, rompiendo el orden
+  // de iteracion que otra parte del codigo depende
+
+✓ // lineal a proposito: `allUsers` tiene <50 elementos en producción
+  // (limite de negocio) y necesitamos el orden de inserción para el
+  // desempate de "primer usuario creado" en resolveOwnership() - un
+  // Map<id, user> pierde ese orden
+  function findUser(id: string) {
+    for (const user of allUsers) {
+      if (user.id === id) return user
+    }
+    return null
+  }
+```
+
+Sin el comentario, la próxima persona que optimiza "por las dudas" rompe
+un invariante que no podía ver. El comentario no explica qué hace el
+loop (eso ya lo dice el código) - explica por qué esta forma, aparentemente
+subóptima, es la correcta.
+
 ## Codigo comentado
 
 Codigo comentado ("por las dudas") no es documentacion, es basura que

@@ -4,6 +4,25 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Este archivo versiona ZAI mismo (el toolkit) — no los proyectos que lo usan,
 esos tienen su propio `CHANGELOG.md` que mantiene `zai-scribe`.
 
+## [0.6.0] - 2026-08-16
+
+### Changed
+- Los 10 skills `zai-practices-*` se enriquecieron con escenarios reales,
+  ejemplos de código, y guías de "qué patrón según el caso" en vez de
+  solo tablas de "cuándo sí, cuándo no": `patterns` (notificaciones a
+  escala, Circuit Breaker, Idempotencia, CQRS/Event Sourcing, Saga, con
+  código), `architecture` (ejemplo hexagonal antes/después, BFF, costo
+  real de separar en microservicios), `typing` (utility types que
+  esconden intención, template literal types, un ejemplo combinado de
+  validación con Zod + unión discriminada + `satisfies`), `testing`
+  (vocabulario stub/spy/mock/fake, testing de contrato compartido entre
+  clientes web+mobile, testing de workers de cola), `security` (código
+  concreto para IDOR, JWT con algoritmo fijo, SSRF con allowlist,
+  prototype pollution), `commits` (ejemplo de separar un diff desordenado
+  en commits atómicos), `changelog` (ejemplo de traducir varios commits a
+  una entrada `[Unreleased]` coherente), `comments` (ejemplo de una
+  elección de código que parece un error hasta que se explica el porqué).
+
 ## [0.5.0] - 2026-08-16
 
 ### Added

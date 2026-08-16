@@ -41,6 +41,62 @@ Cuando amerita: necesitas poder cambiar o mockear infraestructura sin
 tocar reglas de negocio (tests unitarios rapidos del dominio sin DB real,
 o un proveedor externo que sabes que vas a migrar).
 
+### Ejemplo: un CRUD que crece hasta que hexagonal se justifica
+
+**Fase 1 - CRUD simple, sin hexagonal, y está bien así:**
+
+```ts
+// route handler habla directo con Prisma - cero indireccion, cero costo
+app.post("/orders", async (req, res) => {
+  const order = await prisma.order.create({ data: req.body })
+  res.json(order)
+})
+```
+
+Con validaciones simples y sin reglas de negocio reales, esto es
+correcto - agregar un puerto/adapter acá es la sobre-arquitectura que la
+seccion de arriba advierte.
+
+**Fase 2 - aparece una regla de negocio real** ("un pedido no se puede
+confirmar si el usuario tiene una deuda pendiente de más de 30 días", y
+esa regla se evalúa desde tres lugares distintos: al confirmar, al
+generar un reporte, y en un job nocturno). Ahora hay lógica que se
+repetiría en cada lugar si sigue viviendo pegada a Prisma - **este es el
+momento** de introducir el puerto:
+
+```ts
+// domain/order.ts - la regla vive UNA vez, sin saber de Prisma
+class Order {
+  confirm(userDebt: Money) {
+    if (userDebt.exceedsDays(30)) throw new OrderConfirmationBlockedError(this.id)
+    this.status = "confirmed"
+  }
+}
+
+// domain/order-repository.ts - el puerto
+interface OrderRepository {
+  findById(id: string): Promise<Order | null>
+  save(order: Order): Promise<void>
+}
+
+// infrastructure/prisma-order-repository.ts - el adapter, afuera
+class PrismaOrderRepository implements OrderRepository { /* ... */ }
+
+// El route handler ahora orquesta, no decide:
+app.post("/orders/:id/confirm", async (req, res) => {
+  const order = await orderRepo.findById(req.params.id)
+  const debt = await debtService.getDebt(order.userId)
+  order.confirm(debt) // la regla vive en un solo lugar, sin import de Prisma
+  await orderRepo.save(order)
+  res.json({ status: "confirmed" })
+})
+```
+
+La señal de que llegó el momento no fue "el proyecto creció" en
+abstracto - fue que **la misma regla de negocio se necesitaba en más de
+un lugar**, y sin el puerto se hubiera duplicado o quedado acoplada a
+Prisma en los tres.
+
 ## Clean Architecture
 
 Generaliza hexagonal a mas capas concentricas (entities, use cases,
@@ -105,6 +161,30 @@ más de un consumidor tipado del mismo backend - ahí es cuando tRPC (o un
 backend HTTP/REST explícito con Express/NestJS, ver `zai-stack-backend-framework`)
 deja de ser una capa de más y pasa a ser la forma de no duplicar lógica.
 
+### BFF (Backend For Frontend): cuándo un solo backend no alcanza
+
+Con web + mobile compartiendo una API, hay dos formas de resolver que
+cada cliente necesita datos con forma distinta (la web quiere un payload
+grande con todo precargado para un dashboard; mobile quiere respuestas
+chicas para no gastar datos móviles):
+
+- **Una sola API genérica**, y cada cliente pide/filtra lo que necesita
+  (query params, un endpoint GraphQL con selección de campos). Es lo más
+  simple - úsalo mientras las necesidades de web y mobile no diverjan
+  demasiado.
+- **Un BFF por cliente** (`api-web/`, `api-mobile/`) - cada uno es una
+  capa fina que llama a los mismos servicios de dominio pero arma la
+  respuesta a la medida de su cliente. Se justifica cuando las
+  necesidades de forma/agregación divergen tanto que la API genérica
+  termina llena de flags (`?mobile=true`) o de campos que un cliente
+  nunca usa - el BFF absorbe esa divergencia sin ensuciar el dominio
+  compartido.
+
+No arranques con BFFs separados "por si acaso" - es exactamente el mismo
+error que separar microservicios sin la razón operacional concreta (ver
+abajo). Empezá con una API, migrá a BFF cuando la divergencia sea real y
+te esté doliendo.
+
 ## Monolito vs microservicios: la señal no es el tamaño, es el ciclo de vida
 
 Separar algo en su propio servicio se justifica cuando ese algo tiene un
@@ -145,6 +225,15 @@ tiene una razón operacional concreta (scheduling, rate limiting externo,
 perfil de conexión distinto) que el monolito no resuelve bien. Si no
 identificás esa razón concreta para tu caso, es una feature más dentro
 del monolito, no un servicio nuevo.
+
+**El costo que se paga al separar, y que hay que aceptar conscientemente**:
+en cuanto una operación de negocio necesita tocar más de un servicio (un
+pedido que reserva stock en un servicio Y cobra en otro), perdés la
+transacción de base de datos que te daba consistencia gratis en el
+monolito - necesitás un patrón explícito para eso (Saga, ver
+`zai-practices-patterns`). Si tu operación principal cruza servicios todo
+el tiempo, es una señal de que la línea de separación está mal trazada -
+las cosas que cambian juntas deberían vivir juntas.
 
 ## Micro-frontends: casi nunca, para un equipo chico o solo
 

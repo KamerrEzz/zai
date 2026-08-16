@@ -109,3 +109,87 @@ No lo uses para todo - agrega ceremonia real (necesitas una funcion
 constructora que valide y castee). Reservalo para identificadores/valores
 que se pasan mucho y donde confundirlos tiene costo real (IDs, dinero,
 unidades de medida).
+
+## Utility types: `Pick`/`Omit`/`Partial` esconden intención tan fácil como la revelan
+
+```ts
+type CreateUserInput = Omit<User, "id" | "createdAt">
+```
+
+Esto es correcto **mientras `User` no cambie de forma que rompa la
+intención** - si mañana `User` gana un campo `lastLoginAt` que tampoco
+debería pedirse al crear, `Omit<User, "id" | "createdAt">` lo va a
+incluir igual, silenciosamente, porque el `Omit` no sabe cuál era tu
+intención original, solo excluye lo que le dijiste explícitamente. Para
+tipos que reflejan un contrato real (el body de un endpoint, un formulario)
+y no un derivado mecánico de otro tipo, declararlo explícito
+(`type CreateUserInput = { name: string; email: string }`) es más
+verboso pero no depende de que nadie olvide actualizar el `Omit` cuando
+`User` cambia.
+
+Usa `Pick`/`Omit`/`Partial` cuando el derivado es genuinamente mecánico y
+te interesa que siga la forma de la fuente automáticamente (un tipo de
+"parche" para un `PATCH` que por definición son todos los campos de
+`User` opcionales: `Partial<User>` ahí sí expresa la intención real, no
+la esconde).
+
+## Template literal types para strings con estructura
+
+Cuando un `string` en realidad tiene una forma fija (una ruta de API, una
+clave de i18n, un evento con namespace), un template literal type
+convierte errores de tipeo en errores de compilación en vez de bugs en
+runtime:
+
+```ts
+type ApiRoute = `/api/${"users" | "orders" | "billing"}/${string}`
+type DomainEvent = `${"order" | "user"}.${"created" | "updated" | "deleted"}`
+
+function emit(event: DomainEvent) { /* ... */ }
+emit("order.created")   // ok
+emit("order.creatd")    // error de tipos, no un evento que nadie escucha nunca
+```
+
+No lo uses para strings genuinamente libres (nombres de usuario, texto
+libre) - solo para strings que de verdad tienen una gramática fija que
+vale la pena capturar.
+
+## Ejemplo combinado: validar un formulario de punta a punta
+
+Uniones discriminadas + Zod (para el límite runtime) + `satisfies`
+combinados, no elegís uno solo:
+
+```ts
+const LoginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8),
+})
+
+// El resultado de validar SIEMPRE es una unión discriminada -
+// el caller no puede leer `data` sin haber chequeado `success`
+type LoginResult =
+  | { success: true; data: z.infer<typeof LoginSchema> }
+  | { success: false; errors: string[] }
+
+function validateLogin(input: unknown): LoginResult {
+  const result = LoginSchema.safeParse(input)
+  if (!result.success) {
+    return { success: false, errors: result.error.issues.map((i) => i.message) }
+  }
+  return { success: true, data: result.data }
+}
+
+// satisfies para configuración estática relacionada, con el tipo más preciso conservado
+const loginFormDefaults = {
+  email: "",
+  password: "",
+  rememberMe: false,
+} satisfies Partial<z.infer<typeof LoginSchema> & { rememberMe: boolean }>
+```
+
+`unknown` en el input (nunca confiar en la forma de algo que llega de
+afuera), Zod hace el chequeo real en runtime (los tipos de TypeScript no
+existen en runtime, no protegen contra un payload malicioso o mal
+formado), la unión discriminada hace que el caller no pueda "olvidarse"
+de chequear `success` antes de leer `data`, y `satisfies` mantiene el
+tipo más preciso posible en los defaults sin perder el chequeo contra la
+forma esperada.

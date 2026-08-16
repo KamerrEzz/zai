@@ -175,6 +175,72 @@ prueba de que el framework en si, no solo tu código, es superficie de
 ataque, y que la ventana entre "CVE publicado" y "explotacion activa en
 el mundo real" puede ser de dias.
 
+## Ejemplos concretos: el codigo que separa "vulnerable" de "no"
+
+**Broken Access Control (IDOR)** - el chequeo de "existe" no es el chequeo
+de "es tuyo":
+
+```ts
+✗ async function getOrder(orderId: string) {
+    return db.order.findUnique({ where: { id: orderId } })
+    // cualquier usuario autenticado que adivine/enumere un orderId
+    // ajeno se lo lleva puesto - no hay chequeo de ownership
+  }
+
+✓ async function getOrder(orderId: string, requestingUserId: string) {
+    const order = await db.order.findUnique({ where: { id: orderId } })
+    if (!order || order.userId !== requestingUserId) {
+      throw new NotFoundError() // 404, no 403 - no confirmes que el ID existe
+    }
+    return order
+  }
+```
+
+**JWT con algoritmo fijo del lado servidor** (no confiar en el header del token):
+
+```ts
+✗ const payload = jwt.verify(token, secret) // usa el alg que diga el header
+
+✓ const payload = jwt.verify(token, secret, { algorithms: ["HS256"] })
+  // el servidor decide el algoritmo, el token no puede elegir por él -
+  // esto es lo que cierra la confusion RS256/HS256 y el ataque alg:none
+```
+
+**SSRF con allowlist real, no regex:**
+
+```ts
+✗ function isSafeUrl(url: string) {
+    return !url.includes("localhost") && !url.includes("127.0.0.1")
+    // DNS rebinding, IPs en octal/decimal, redirects: todo esto lo evade
+  }
+
+✓ const ALLOWED_HOSTS = new Set(["api.partner.com", "cdn.example.com"])
+  async function isSafeUrl(url: string) {
+    const { hostname } = new URL(url)
+    if (!ALLOWED_HOSTS.has(hostname)) return false
+    const { address } = await dns.promises.lookup(hostname)
+    return !isPrivateOrLoopback(address) // resolvé vos mismo, no confíes en la lib HTTP
+  }
+```
+
+**Prototype pollution al mergear input externo:**
+
+```ts
+✗ function applyUserPreferences(base: object, userInput: object) {
+    return Object.assign(base, userInput)
+    // userInput = JSON.parse('{"__proto__":{"isAdmin":true}}') contamina
+    // Object.prototype para TODO el proceso, no solo este objeto
+  }
+
+✓ const DANGEROUS_KEYS = new Set(["__proto__", "constructor", "prototype"])
+  function applyUserPreferences(base: object, userInput: object) {
+    const safe = Object.fromEntries(
+      Object.entries(userInput).filter(([k]) => !DANGEROUS_KEYS.has(k))
+    )
+    return Object.assign(base, safe)
+  }
+```
+
 ## El principio detras de todo esto
 
 Ningun patron de arriba se defiende con una sola linea de codigo aislada
