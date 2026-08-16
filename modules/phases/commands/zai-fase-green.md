@@ -36,6 +36,6 @@ que.
 
 ## Cierre
 
-Confirmame que los tests de la fase pasan (pegame la salida), y que el
+Confirmame que los tests de la fase pasan (pegame la salida), que el
 estado ya esta en `green` (lo transicionaste en el paso 2, no hace falta
-transicionar de nuevo).
+transicionar de nuevo), y que el proximo paso es `/zai-fase-audit`.

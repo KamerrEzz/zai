@@ -41,22 +41,48 @@ sin confirmar, en vez de inventarlo.
 ## Paso 3 - `docs/VISION.md` completo
 
 Con mis respuestas (o con lo ya dicho, si pedí seguir sin contestar todo),
-escribí `docs/VISION.md` (creá `docs/` si no existe) con esta forma:
+escribí `docs/VISION.md` (creá `docs/` si no existe). Este documento tiene
+que alcanzar sin ayuda: si me voy del proyecto por tres meses y vuelvo,
+leyendo **solo este archivo** tengo que entender qué se está construyendo,
+completo - no solo la fase 1. La vara de profundidad es literal, no
+aproximada: cada sección de abajo tiene que tener el nivel de detalle de
+un documento de spec funcional real (entidades concretas, estados,
+reglas, ejemplos con números reales cuando hay plata/fechas de por medio),
+no un resumen en prosa de un par de líneas. Un desglose funcional que
+podría aplicarse a cualquier proyecto similar sin cambiar una palabra
+está mal - tiene que ser específico a esta idea.
 
 ```markdown
 # <Nombre> - v0.1
 
+## Índice
+(solo si el documento termina teniendo más de ~5 secciones de desglose -
+un salto directo a cada una, igual que un índice de spec real)
+
 ## Qué es / para quién
 
 ## Principios de diseño
-(solo si dejé alguno claro en la idea - reglas que van a guiar decisiones
-futuras, tipo "cada tarjeta es dueña de sus propias fechas". Si no dije
-nada de esto, omití la sección entera, no la inventes.)
+Reglas cortas, concretas, accionables - del estilo "nada se borra: soft
+delete + audit_log", no "el sistema debe ser confiable". Cada principio
+tiene que poder usarse después para decidir algo (si dudás si una feature
+nueva encaja, un principio bien escrito responde eso). Si dejé alguno
+claro en la idea, va acá tal cual lo dije o mejor formulado; si ninguno
+surge de lo que conté, omití la sección entera, no la inventes de cero.
+
+## Entidades principales
+Lista de las entidades/objetos de datos centrales de **todo el sistema**,
+no solo de la fase 1 - los campos clave de cada una, y cómo se relacionan
+entre sí (no el schema completo con tipos SQL, eso es trabajo de la spec
+de cada fase - acá es el mapa de qué existe y cómo se conecta, para que
+alguien entienda la forma del sistema entero de un vistazo).
 
 ## <Desglose por área funcional>
 Una sección por cada pieza grande de la idea, no un párrafo único que
 mezcle todo. El número y nombre de las áreas depende de la idea, no hay
-lista fija.
+lista fija. Cada sección describe: qué hace exactamente, qué estados/reglas
+tiene, y un ejemplo concreto con datos reales cuando la lógica no es obvia
+(cualquier cálculo, fecha límite, o regla de negocio no trivial se explica
+con un caso trabajado, no solo se menciona que existe).
 
 ## Fuera de alcance
 Lo que explícitamente no entra en esta primera versión.
@@ -146,5 +172,5 @@ validacion zod) para que yo lo sepa.
 ## Cierre
 
 Mostrame un resumen corto: que archivos creaste, que quedo en "Decisiones
-abiertas" de `docs/VISION.md` (si algo quedo), y confirmame que
-`/zai-estado` ya refleja la fase 1 en `planning`.
+abiertas" de `docs/VISION.md` (si algo quedo), que `/zai-estado` ya
+refleja la fase 1 en `planning`, y que el proximo paso es `/zai-fase-red`.

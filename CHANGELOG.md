@@ -4,6 +4,35 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Este archivo versiona ZAI mismo (el toolkit) — no los proyectos que lo usan,
 esos tienen su propio `CHANGELOG.md` que mantiene `zai-scribe`.
 
+## [0.10.0] - 2026-08-16
+
+### Changed
+- `/zai-vision` exige ahora la misma profundidad que un spec funcional
+  real (indice cuando el documento crece, seccion de "Entidades
+  principales" que cubre el sistema completo -no solo la fase 1-,
+  principios de diseño formulados como reglas accionables, y desglose
+  funcional con ejemplos concretos con numeros reales). Encontrado en la
+  primera prueba real: el `docs/VISION.md` que generaba para MisEconomía
+  se quedaba corto comparado con un documento equivalente que el usuario
+  ya habia escrito sin ZAI (`panel.neenbyss.com/docs/PROJECTO.md`) - ese
+  documento fue la referencia concreta usada para subir la vara.
+- `/zai-estado` ahora siempre calcula y muestra `proximo paso: <comando
+  exacto>` a partir de `phase_state` + blockers, con una tabla explicita
+  de estado -> comando como unica fuente de verdad. `/zai-init`,
+  `/zai-vision`, `/zai-fase-red`, `/zai-fase-green` y `/zai-fase-audit`
+  ahora tambien lo dicen en su cierre (los demas ya lo hacian). Motivo:
+  prueba real mostro varios turnos perdidos porque no era obvio que
+  comando seguia despues de cada paso.
+
+### Fixed
+- `/zai-fase-start` sugeria siempre `/zai-fase-close` como el paso
+  correcto cuando la fase actual no estaba en `documented`, sin importar
+  en que estado real estuviera - falso en la mayoria de los casos (solo
+  es correcto si ya esta en `audited`). Encontrado en la misma prueba
+  real: una fase recien creada en `planning` (por `/zai-vision`) recibio
+  la sugerencia incorrecta de "cerrala con `/zai-fase-close`" en vez de
+  "avanzala con `/zai-fase-red`".
+
 ## [0.9.0] - 2026-08-16
 
 ### Fixed

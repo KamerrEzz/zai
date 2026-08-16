@@ -97,5 +97,5 @@ validacion zod) para que yo lo sepa.
 
 ## Cierre
 
-Mostrame un resumen corto: que archivos creaste, y confirmame que
-`/zai-estado` ya refleja la fase 1 en `planning`.
+Mostrame un resumen corto: que archivos creaste, que `/zai-estado` ya
+refleja la fase 1 en `planning`, y que el proximo paso es `/zai-fase-red`.

@@ -39,4 +39,5 @@ pnpm --dir "$(cat ~/.config/opencode/.zai-repo-path)" exec tsx scripts/zai-trans
 ## Cierre
 
 Confirmame que tests se escribieron, que efectivamente fallan (pegame la
-salida relevante, no todo el log), y que el estado quedo en `red`.
+salida relevante, no todo el log), que el estado quedo en `red`, y que el
+proximo paso es `/zai-fase-green`.

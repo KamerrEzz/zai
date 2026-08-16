@@ -8,10 +8,22 @@ Vas a abrir una fase nueva. Esto asume que `.zai/state.json` ya existe
 ## Paso 1 - validar que se puede
 
 Leé `.zai/state.json`. Si la fase actual **no** esta en `documented`, PARÁ
-ACÁ: decime en que estado esta y que `/zai-fase-close` tiene que terminarla
-antes de abrir la siguiente. No lo intentes igual - el script de abajo lo va
-a rechazar de todas formas, pero quiero que me lo digas vos primero, con tus
-palabras, no como un stack trace.
+ACÁ: decime en que estado esta realmente, y decime el comando correcto para
+avanzarla desde ahi - **no asumas que es `/zai-fase-close`**, ese solo es
+correcto si ya esta en `audited`. Usa esta misma tabla que ya usa
+`/zai-estado` (no la repitas de memoria, es la unica fuente de verdad):
+
+| esta en... | el proximo paso real es... |
+|---|---|
+| `planning` | `/zai-fase-red` |
+| `red` | `/zai-fase-green` |
+| `green`, sin blockers | `/zai-fase-audit` |
+| `green`, con blockers | `/zai-fase-fix` |
+| `audited` | `/zai-fase-close` |
+
+No lo intentes igual - el script de abajo lo va a rechazar de todas formas,
+pero quiero que me lo digas vos primero, con tus palabras y el comando
+correcto, no como un stack trace ni una suposicion generica.
 
 ## Paso 2 - definir la fase
 

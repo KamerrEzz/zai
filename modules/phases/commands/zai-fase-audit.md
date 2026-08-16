@@ -53,5 +53,6 @@ pnpm --dir "$(cat ~/.config/opencode/.zai-repo-path)" exec tsx scripts/zai-trans
 ## Cierre
 
 Decime el veredicto del auditor, cuantos blockers quedaron (si quedaron), y
-si el estado avanzo a `audited` o se quedo en `green` esperando
-`/zai-fase-fix`.
+si el estado avanzo a `audited` o se quedo en `green`. El proximo paso es
+`/zai-fase-close` si avanzo a `audited`, o `/zai-fase-fix` si se quedo en
+`green` con blockers.
