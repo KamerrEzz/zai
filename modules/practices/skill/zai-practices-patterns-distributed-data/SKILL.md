@@ -1,61 +1,39 @@
 ---
 name: zai-practices-patterns-distributed-data
-description: Use ONLY when considering CQRS, Event Sourcing, or Saga - patterns for data/transactions that cross service or read/write-model boundaries. Do not use for a single service's internal data access (see zai-practices-patterns-structural, Repository) or for resilience against external call failures (see zai-practices-patterns-resilience).
+description: "Trigger: CQRS, Event Sourcing, Saga, transacciones distribuidas, microservicios. Da criterio de cuando estos patrones de datos cross-servicio se justifican."
+license: MIT
+metadata:
+  author: KamerrEzz
+  version: "1.0"
 ---
 
-# Datos y transacciones distribuidas: CQRS, Event Sourcing, Saga
+## Activation Contract
+Load when considering CQRS, Event Sourcing, or Saga — patterns for data/transactions that cross service or read/write-model boundaries. Do not use for a single service's internal data access (`zai-practices-patterns-structural`, Repository) or for resilience against external call failures (`zai-practices-patterns-resilience`).
 
-Los tres patrones de este skill comparten algo: son significativamente
-más complejos que CRUD + una base relacional con transacciones, y existen
-para resolver un problema concreto que **la mayoría de los proyectos no
-tiene todavía**. Mencionarlos acá es para que sepas que existen y qué
-problema resuelven cada uno - no para que los adoptes por default.
+## Hard Rules
+- No adoptes CQRS ni Event Sourcing por default; ambos son más complejos que CRUD + relacional y casi ningún proyecto chico/mediano los necesita todavía.
+- CQRS solo si lectura y escritura divergen tanto que un solo modelo compromete a ambas.
+- Event Sourcing solo si el historial completo de cambios es un requisito de negocio real (auditoría regulatoria, reconstrucción de estado pasado).
+- Saga solo si ya hay microservicios genuinamente separados y una operación de negocio cruza más de uno.
+- Si una operación necesita consistencia transaccional fuerte entre dos partes, mantenelas en el mismo servicio con una transacción real en vez de usar Saga.
 
-## CQRS y Event Sourcing: mencionados porque existen, no porque casi nunca amerita
+## Decision Gates
+| Situación | Patrón |
+|---|---|
+| Lectura/escritura con necesidades muy distintas (dashboards pesados vs escritura normalizada) | CQRS |
+| Historial de cambios es requisito de negocio (auditoría, reconstrucción de estado) | Event Sourcing |
+| Operación de negocio cruza microservicios ya separados | Saga (con acción de compensación por paso) |
+| Duda, o proyecto sin razón de negocio ya identificada | Ninguno; CRUD + transacción relacional |
 
-**CQRS** (separar el modelo de escritura del modelo de lectura) sirve
-cuando las necesidades de lectura y escritura divergen tanto que un solo
-modelo compromete a ambas (escrituras que necesitan consistencia fuerte y
-normalización, lecturas que necesitan datos desnormalizados para
-dashboards pesados). **Event Sourcing** (guardar la secuencia de eventos
-en vez del estado final) sirve cuando el historial completo de cambios es
-en sí mismo un requisito de negocio (auditoría regulatoria, poder
-reconstruir el estado en cualquier punto del pasado).
+## Execution Steps
+1. Confirmar que ya existe una razón de negocio concreta e identificada, no solo "podría servir a futuro".
+2. Si es lectura/escritura divergente → evaluar CQRS; si es historial/auditoría → evaluar Event Sourcing.
+3. Si cruza microservicios → confirmar que están genuinamente separados (ver `zai-practices-architecture-service-boundaries`) antes de diseñar la Saga.
+4. Para Saga, definir la acción de compensación de cada paso antes de implementar.
+5. Ver `references/examples.md` para el detalle de cada patrón y las fuentes.
 
-Ambos son significativamente más complejos que CRUD + una base relacional
-- eventual consistency que hay que manejar en cada lugar que lee,
-proyecciones que hay que mantener y reconstruir. Para la enorme mayoría
-de proyectos (incluido casi cualquier SaaS de tamaño chico/mediano),
-ninguno de los dos se justifica. No los selecciones por default sin una
-razón de negocio concreta y ya identificada.
+## Output Contract
+Reportar qué patrón (si alguno) se recomienda, la razón de negocio concreta que lo justifica, y si es Saga, listar los pasos y sus compensaciones.
 
-## Transacciones que cruzan más de un servicio: Saga
-
-Si separaste en microservicios (ver
-`zai-practices-architecture-service-boundaries`) y una operación de
-negocio necesita tocar más de uno (crear un pedido reserva stock en el
-servicio de inventario Y cobra en el servicio de pagos), ya no tenés una
-transacción de base de datos que cubra ambos.
-
-**Saga**: la operación se modela como una secuencia de pasos locales, cada
-uno con su **acción de compensación** si un paso posterior falla (si el
-cobro falla después de reservar el stock, se dispara la compensación
-"liberar stock reservado"). No es una transacción real (no hay rollback
-atómico) - es consistencia eventual con un plan explícito de qué hacer
-si algo a mitad de camino falla.
-
-Cuándo SÍ: ya tenés microservicios genuinamente separados (ver el
-criterio de ciclo de vida distinto en
-`zai-practices-architecture-service-boundaries`) y una operación de
-negocio cruza más de uno. Cuándo NO: es la razón más común para NO
-separar algo en microservicios en primer lugar - si una operación
-necesita consistencia transaccional fuerte entre dos partes, mantenerlas
-en el mismo servicio (con una transacción de base de datos real) es más
-simple que una Saga.
-
-## Fuentes
-
-- [bliki: CQRS - Martin Fowler](https://martinfowler.com/bliki/CQRS.html) - writeup original, advierte explícitamente que CQRS "agrega complejidad riesgosa".
-- [Don't Let the Internet Dupe You, Event Sourcing is Hard - Chris Kiehl](https://chriskiehl.com/article/event-sourcing-is-hard) - un contrapeso real sobre el costo de Event Sourcing, no solo la versión promocional.
-- [Pattern: Saga - microservices.io (Chris Richardson)](https://microservices.io/patterns/data/saga.html) - la referencia canónica.
-- [Saga Design Pattern - Azure Architecture Center](https://learn.microsoft.com/en-us/azure/architecture/patterns/saga) - ejemplo concreto de implementación por orquestación vs coreografía.
+## References
+- `references/examples.md` — CQRS/Event Sourcing (advertencia de complejidad), detalle de Saga, y fuentes

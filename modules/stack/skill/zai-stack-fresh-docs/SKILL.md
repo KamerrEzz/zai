@@ -1,42 +1,35 @@
 ---
 name: zai-stack-fresh-docs
-description: Use ONLY when about to write code that imports or configures a dependency that might be less than 2 years old, or that had a major version bump in the last year (examples in this stack - React 19, Next.js 16, Tailwind, base-ui, dnd-kit - verify, do not assume this list is exhaustive or still accurate). Do not use for stable, long-established APIs (Node built-ins, well-established libraries with no recent breaking changes).
+description: "Trigger: dependencia nueva, libreria <2 años, major version reciente, context7. Exige consultar context7 antes de codear con librerias jovenes o recien actualizadas."
+license: MIT
+metadata:
+  author: KamerrEzz
+  version: "1.0"
 ---
 
-# Regla obligatoria: documentacion actualizada antes de codigo en dependencias jovenes
+## Activation Contract
+Usar antes de escribir codigo que importe o configure una dependencia que podria tener menos de 2 años, o que tuvo un major version bump en el ultimo año (ejemplos: React 19, Next.js 16, Tailwind, base-ui, dnd-kit — verificar contra la realidad actual, esta lista envejece y no es exhaustiva). No usar para APIs estables y bien establecidas (built-ins de Node, librerias maduras sin breaking changes recientes).
 
-Tu conocimiento de una libreria con menos de 2 años de vida, o que cambio
-de major en el ultimo año, puede estar desactualizado o directamente
-equivocado - las APIs de este tipo de librerias cambian mas rapido que tu
-fecha de corte de entrenamiento. Esto no es una sugerencia: hay un gate
-real (`zai.stack`, ver `docs/RESEARCH.md`) que **bloquea** la escritura de
-codigo que agrega o usa una dependencia de este tipo si no consultaste
-`context7` antes, en esta misma sesion.
+## Hard Rules
+- Hay un gate real (`zai.stack`, ver `docs/RESEARCH.md`) que bloquea escribir codigo que agrega/usa una dependencia joven sin haber consultado `context7` antes, en la misma sesion — esto no es opcional.
+- Nunca escribir codigo para esquivar el gate; resolver el bloqueo consultando `context7`.
+- Si no estas seguro de si una libreria califica como "joven", chequealo (`context7` o `npm view <pkg> time`) en vez de asumir que tu conocimiento esta al dia.
+- La lista de ejemplos de arriba envejece — no confies en ella ciegamente, verifica por libreria.
 
-## Que hacer
+## Decision Gates
+| Situacion | Accion |
+|---|---|
+| No estas seguro si la libreria califica como joven/recien actualizada | Chequear con `context7` o `npm view <pkg> time` |
+| La libreria califica (< 2 años o major bump en el ultimo año) | Correr `context7` resolve-library-id + query-docs antes de escribir codigo |
+| La libreria es estable/bien establecida (built-ins de Node, sin breaking changes recientes) | Este skill no aplica |
+| La escritura se bloquea con un error "zai gate context7" | Consultar `context7` para la libreria mencionada y reintentar |
 
-Antes de escribir codigo que importe o configure una libreria de la que no
-estas seguro de la vigencia:
+## Execution Steps
+1. Identificar cualquier dependencia que este por importarse/configurarse en el codigo a escribir.
+2. Si no estas seguro de su antiguedad/estabilidad, chequealo en vez de asumir.
+3. Si califica como joven o recien actualizada, llamar a `context7` resolve-library-id y despues query-docs para esa libreria.
+4. Recien ahi escribir el codigo.
+5. Si una escritura se bloquea por el gate, consultar `context7` para la libreria senalada y reintentar — no buscar la vuelta.
 
-1. Si no sabes si la libreria entra en esta categoria, chequealo (via
-   `context7` o `npm view <paquete> time`) en vez de asumir que tu
-   conocimiento esta al dia.
-2. Si entra en la categoria: usa `context7` (resolve-library-id +
-   query-docs) para esa libreria especifica **antes** de escribir el
-   codigo que la usa, no despues.
-3. Recien ahi escribi el codigo.
-
-## Si el gate te bloquea
-
-Si una escritura te devuelve un error que menciona "zai gate context7" (o
-similar), es el gate real, no un bug - consulta `context7` para la
-libreria que menciona el error y volve a intentar. No busques la vuelta
-escribiendo el codigo de otra forma para esquivar el gate.
-
-## Nota sobre la lista de ejemplos de arriba
-
-La lista de librerias jovenes en la descripcion de este skill (React 19,
-Next.js 16, etc) es la que valia a la fecha en que se escribio este skill
-- no la des por buena sin chequear: las librerias envejecen y dejan de
-calificar, y aparecen otras nuevas que si califican. Si tenes dudas sobre
-si algo sigue calificando, chequealo en vez de guiarte solo por esta lista.
+## Output Contract
+Confirmar que dependencias se chequearon via `context7` (o se encontraron ya estables) antes de escribir codigo, y citar el library id resuelto usado.

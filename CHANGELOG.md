@@ -4,6 +4,25 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Este archivo versiona ZAI mismo (el toolkit) — no los proyectos que lo usan,
 esos tienen su propio `CHANGELOG.md` que mantiene `zai-scribe`.
 
+## [0.8.0] - 2026-08-16
+
+### Changed
+- Los 24 skills de ZAI (`zai-stack-*` y `zai-practices-*`) se retrofitearon
+  al formato LLM-first que exige nuestro propio `skill-creator`: frontmatter
+  completo (`license: MIT`, `metadata.author`, `metadata.version`),
+  `description` en formato `"Trigger: {keywords}. {que hace}."`, y cuerpo
+  reestructurado en las 7 secciones (Activation Contract, Hard Rules,
+  Decision Gates, Execution Steps, Output Contract, References). El
+  contenido largo (ejemplos de código, escenarios worked, fuentes) se
+  movió a `references/`/`assets/` propios de cada skill — se cargan bajo
+  demanda en vez de vivir siempre en el `SKILL.md`. Verificado con
+  `skill-improver` (auditoría) y con el binario real de OpenCode
+  (`opencode debug skill`) que las 24 cargan con el frontmatter nuevo y
+  ningún cross-referencia entre skills quedó rota.
+- Repo licenciado explícitamente bajo MIT (`LICENSE` nuevo,
+  `package.json` con `"license": "MIT"`) — antes no tenía licencia
+  declarada pese a ser público.
+
 ## [0.7.0] - 2026-08-16
 
 ### Changed

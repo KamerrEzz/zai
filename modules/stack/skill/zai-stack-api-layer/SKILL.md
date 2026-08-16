@@ -1,33 +1,31 @@
 ---
 name: zai-stack-api-layer
-description: Use ONLY when deciding how a Next.js App Router app should expose its backend logic to its own frontend - tRPC vs Server Actions + Zod. Do not use for a standalone backend service (Express/NestJS) exposing a REST/RPC API to external consumers - that's a different decision, not covered here.
+description: "Trigger: tRPC, Server Actions, Zod, API de Next.js App Router. Decide como una app Next.js expone su backend a su propio frontend."
+license: MIT
+metadata:
+  author: KamerrEzz
+  version: "1.0"
 ---
 
-# tRPC vs Server Actions + Zod
+## Activation Contract
+Usar cuando haya que decidir como una app Next.js App Router debe exponer su logica de backend a su propio frontend: tRPC vs Server Actions + Zod. No usar para un servicio backend standalone (Express/NestJS, ver `zai-stack-backend-framework`) que expone una API a consumidores externos.
 
-## Arbol de decision
+## Hard Rules
+- Default: Server Actions + Zod. Solo cambiar a tRPC cuando exista, o este confirmado, un segundo consumidor tipado.
+- Nunca adoptar tRPC como preferencia arquitectonica sola — debe justificarse con un segundo consumidor real.
+- Si una futura app movil/integracion solo se menciona pero no esta confirmada, preguntale al usuario si conviene pagar la capa de tRPC ahora o migrar despues.
 
-- **El unico consumidor de esta logica es el propio Next.js app** (no hay,
-  ni se planea, una app movil u otra integracion externa consumiendo el
-  mismo backend de forma tipada) -> **Server Actions + Zod**. Es menos
-  capas, se integra nativo con formularios y progressive enhancement, y no
-  agrega una abstraccion que nadie mas que ese mismo Next.js va a usar.
+## Decision Gates
+| Condicion | Eleccion |
+|---|---|
+| El unico consumidor es la propia app Next.js (sin app movil/integracion externa planeada) | Server Actions + Zod |
+| Existe, o esta confirmado, otro consumidor tipado (app movil, otra SPA, integracion externa) | tRPC |
 
-- **Hay, o se sabe que va a haber, mas de un consumidor tipado del mismo
-  backend** (app movil, otra SPA, integraciones externas que consumen la
-  API con el mismo nivel de type-safety) -> **tRPC**.
+## Execution Steps
+1. Chequear si hay algun consumidor ademas de la propia app Next.js que necesite acceso tipado a esta logica de backend.
+2. Si no hay ninguno, default a Server Actions + Zod.
+3. Si existe o esta confirmado un segundo consumidor real, elegir tRPC.
+4. Si el segundo consumidor es solo especulativo, preguntar al usuario antes de comprometerse con tRPC.
 
-## Default
-
-**Server Actions + Zod.** Es el caso real la enorme mayoria de las veces -
-un Next.js hablando solo con su propio backend. tRPC es la excepcion
-justificada por un segundo consumidor real, no una preferencia de
-arquitectura por si sola.
-
-## Si el proyecto no encaja claramente
-
-Si el spec de la fase menciona una futura app movil o integracion externa
-pero todavia no existe, pregúntale al usuario si vale la pena pagar la
-capa de tRPC desde ahora o si conviene arrancar con Server Actions y migrar
-cuando el segundo consumidor sea real - no lo decidas por tu cuenta,
-migrar mas adelante tiene costo real de reescritura.
+## Output Contract
+Indicar el enfoque elegido (Server Actions + Zod o tRPC) y la evidencia de consumidor que lo justifico.

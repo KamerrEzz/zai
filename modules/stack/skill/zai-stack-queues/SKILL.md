@@ -1,47 +1,37 @@
 ---
 name: zai-stack-queues
-description: Use ONLY when a project needs a background job / message queue system and must choose between BullMQ, pg-boss, or RabbitMQ. Do not use for synchronous request/response work, or for simple fire-and-forget work that fits in a setTimeout/cron without a real queue.
+description: "Trigger: jobs en background, cola de mensajes, BullMQ, pg-boss, RabbitMQ. Elige el sistema de colas entre BullMQ, pg-boss o RabbitMQ."
+license: MIT
+metadata:
+  author: KamerrEzz
+  version: "1.0"
 ---
 
-# BullMQ vs pg-boss vs RabbitMQ
+## Activation Contract
+Usar cuando un proyecto necesite un sistema de jobs en background / cola de mensajes y haya que elegir entre BullMQ, pg-boss o RabbitMQ. No usar para trabajo sincrono request/response, ni para trabajo simple fire-and-forget que entra en un setTimeout/cron sin cola real.
 
-## Arbol de decision
+## Hard Rules
+- Evaluar las reglas en orden de arriba hacia abajo — la primera que matchea gana, no saltar directo al default.
+- Nunca sumar pg-boss si ya hay Redis dedicado — seria infraestructura duplicada para el mismo problema.
+- Sumar Redis para BullMQ es una decision consciente: comunicasela explicitamente al usuario al aplicar la regla 2 (ej. "esta fase necesita jobs programados, voy a sumar Redis + BullMQ").
+- Si el proyecto no encaja claramente en una regla, pregunta al usuario antes de asumir — migrar desde pg-boss despues es una migracion real, no gratis.
 
-Reglas en orden - la primera que matchea gana:
+## Decision Gates
+| Condicion (la primera que matchea gana) | Eleccion |
+|---|---|
+| Ya hay Redis dedicado en el proyecto (cache u otro uso) | BullMQ |
+| El spec pide desde el diseño jobs programados (cron-like), delayed, o con prioridad | BullMQ (+ sumar Redis, avisar al usuario) |
+| Hay Postgres, no hay Redis dedicado, y los jobs son simples (fire-and-forget/retry basico) | pg-boss |
+| Hay consumidores en mas de un lenguaje, o se necesita routing por topic/exchange | RabbitMQ |
+| Ninguna de las anteriores aplica con claridad | pg-boss (default — menos infra nueva) |
 
-1. **Ya hay Redis dedicado en el proyecto** (para cache u otro uso, no solo
-   para esta cola) -> **BullMQ**. No sumes pg-boss si Redis ya esta ahi -
-   seria infraestructura duplicada para el mismo problema.
+## Execution Steps
+1. Chequear si ya hay una instancia de Redis dedicada.
+2. Revisar el spec de la fase por requisitos de scheduling/prioridad.
+3. Chequear presencia de Postgres y complejidad de los jobs.
+4. Chequear consumidores multi-lenguaje o necesidad de routing.
+5. Aplicar la primera regla que matchea en orden; si ninguna aplica, default a pg-boss.
+6. Si se suma Redis, comunicarselo explicitamente al usuario.
 
-2. **El spec de la fase ya pide, desde el diseño, jobs programados
-   (cron-like), delayed, o con prioridad** -> **BullMQ**, aunque todavia no
-   haya Redis en el proyecto. Justificacion: pg-boss puede hacer delayed
-   jobs basicos, pero prioridad y scheduling recurrente son notablemente
-   mas solidos en BullMQ - no vale la pena pelear contra la herramienta
-   equivocada desde el arranque cuando ya se sabe que se va a necesitar
-   eso. Esto significa sumar Redis al proyecto - es una decision consciente,
-   no una que se tome en silencio: decíselo al usuario explicitamente
-   cuando la apliques ("esta fase necesita jobs programados, voy a sumar
-   Redis + BullMQ").
-
-3. **Hay Postgres, no hay Redis dedicado, y los jobs son simples**
-   (fire-and-forget o retry basico, sin scheduling recurrente ni
-   prioridad) -> **pg-boss**. Menos infraestructura para correr.
-
-4. **Hay consumidores en mas de un lenguaje, o se necesita routing por
-   topic/exchange** -> **RabbitMQ**. Ni BullMQ ni pg-boss estan pensados
-   para multi-lenguaje o topologias de routing complejas.
-
-## Default si ninguna condicion aplica con claridad
-
-**pg-boss** - es la opcion de menos infraestructura nueva dado que Postgres
-ya es parte fija del stack. Sumar Redis (para BullMQ) o RabbitMQ es una
-decision que hay que poder justificar con una de las condiciones de
-arriba, no un default.
-
-## Si el proyecto no encaja claramente
-
-Pregúntale al usuario antes de asumir, en particular si no es claro si los
-jobs van a necesitar scheduling/prioridad mas adelante - agregar Redis
-despues de arrancar con pg-boss es una migracion real, no un cambio
-gratis.
+## Output Contract
+Indicar el sistema de colas elegido, la regla exacta (o el default) que lo disparo, y — si se eligio BullMQ por la regla 2 — confirmar que se le aviso al usuario sobre sumar Redis.

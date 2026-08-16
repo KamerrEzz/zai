@@ -1,118 +1,40 @@
 ---
 name: zai-practices-comments
-description: Use ONLY when deciding whether to write a code comment, writing a docstring for a public API, or reviewing existing comments. Do not use for commit messages, changelogs, or ADRs - those are different artifacts for different audiences.
+description: "Trigger: comentario de codigo, docstring, TODO, FIXME, codigo comentado. Decide si un comentario vale la pena y exige que documente el por que, nunca el que."
+license: MIT
+metadata:
+  author: KamerrEzz
+  version: "1.0"
 ---
 
-# Comentarios: el WHY, nunca el WHAT
+## Activation Contract
+Load when deciding whether to write a code comment, writing a docstring for a public API, or reviewing existing comments. Do not use for commit messages, changelogs, or ADRs — different artifacts, different audiences.
 
-## La prueba de una linea
+## Hard Rules
+- Si un mejor nombre haria innecesario el comentario, arregla el nombre en vez de comentar.
+- Nunca escribas un comentario que solo repite lo que el codigo ya dice (el WHAT).
+- Un comentario que describe el comportamiento actual en vez de una restriccion permanente envejece mal — escribe el WHY.
+- Un `TODO`/`FIXME` sin dueño ni issue linkeado es deshonesto — borralo o convertilo en issue.
+- Nunca dejes codigo comentado "por las dudas" — `git log`/`git blame` ya lo recuperan.
 
-Antes de escribir un comentario, preguntate: **¿este comentario dejaria de
-hacer falta si el codigo tuviera mejores nombres?** Si la respuesta es si,
-el problema es el nombre, no la falta de comentario - arreglá el nombre.
+## Decision Gates
+| Situacion | Accion |
+|---|---|
+| Restriccion no obvia detras de una decision de diseño | Comentario explicando el por que |
+| Workaround de un bug ajeno/dependencia | Comentario con referencia al bug |
+| Invariante que el compilador no puede verificar | Comentario que declara el invariante |
+| API publica que otros llaman sin leer la implementacion | Docstring documentando el contrato (input/output/excepciones/side effects) |
+| Codigo interno, quien lo llama puede leer la implementacion en segundos | Sin docstring — el tipo y el nombre ya documentan |
 
-```ts
-✗ // suma el precio de todos los items
-const total = items.reduce((acc, i) => acc + i.price, 0)
+## Execution Steps
+1. Aplica la prueba de una linea: ¿un mejor nombre eliminaria este comentario? Si es si, renombra.
+2. Contrasta la situacion contra la tabla de Decision Gates antes de escribir nada.
+3. En APIs publicas, redacta el docstring contra el contrato, no contra la implementacion.
+4. En cualquier `TODO`/`FIXME` existente, verifica que tenga dueño + issue, o borralo.
+5. Al revisar codigo, trata comentarios viejos con la misma sospecha que codigo muerto — un comentario desactualizado desinforma activamente.
 
-✓ const totalPrice = items.reduce((acc, item) => acc + item.price, 0)
-```
+## Output Contract
+Reporta que comentarios/docstrings agregar, que renombrar en vez de comentar, y que borrar (TODOs huerfanos, codigo comentado, comentarios que repiten el WHAT), con la razon de una linea en cada caso.
 
-El comentario de arriba no agrega informacion que el codigo no tenga ya -
-es ruido que hay que mantener sincronizado a mano para siempre.
-
-## Cuando un comentario SI vale la pena
-
-Solo cuando el codigo, por mas bien nombrado que este, no puede expresar
-el **por que**:
-
-- **Una restriccion no obvia**: por que se eligio este approach y no el
-  obvio. "Usamos polling en vez de websockets porque el proxy corporativo
-  del cliente bloquea conexiones long-lived" - eso no se deduce leyendo el
-  codigo del polling.
-- **Un workaround de un bug ajeno**: "Bug de Node 22: `fs.watch` no
-  dispara en macOS bajo Docker Desktop, ver nodejs/node#XXXXX. Usamos
-  polling con `fs.stat` como fallback." Sin esto, alguien va a "limpiar"
-  el workaround en seis meses y reintroducir el bug.
-- **Un invariante que el compilador no puede verificar**: "Este array
-  siempre tiene al menos un elemento porque `validate()` ya lo garantizo
-  mas arriba" - explica por que un `array[0]` sin chequeo es seguro.
-- **Comportamiento que sorprende**: algo que hace exactamente lo que dice
-  pero de una forma que no es la que alguien esperaria a primera vista.
-
-## Comentarios que envejecen mal (y por que)
-
-Un comentario que describe **el comportamiento actual** en vez de una
-restriccion permanente tiene fecha de vencimiento — el codigo cambia, el
-comentario se queda desactualizado, y ahora miente activamente (peor que
-no tener nada). Los que sobreviven bien describen **por que**, que
-normalmente no cambia aunque el como si.
-
-```ts
-✗ // retorna el usuario activo (agregado en la v2, antes retornaba null)
-✓ // ver ADR-0004: se decidio no soportar multiples sesiones activas
-   //   por usuario, así que esto siempre devuelve una sola
-```
-
-Revisá comentarios viejos con la misma sospecha que revisarias codigo
-muerto - un comentario desactualizado no es inofensivo, activamente
-desinforma a quien lo lee confiando en que sigue siendo cierto.
-
-## Docstrings en APIs publicas
-
-Para una funcion/clase que otros van a llamar sin leer su implementacion
-(una libreria, un modulo compartido entre equipos, una API publica): el
-docstring documenta el **contrato**, no la implementacion - que recibe,
-que devuelve, que excepciones tira y cuando, efectos secundarios. Para
-codigo interno de una sola app donde quien lo llama tambien puede leer la
-implementacion en dos segundos, un docstring completo es a menudo
-sobre-documentacion - el tipo (ver `zai-practices-typing`) ya documenta la
-forma, y el nombre ya documenta el que.
-
-## `TODO`/`FIXME`
-
-Un `TODO` sin dueño ni fecha es un comentario que miente por omision -
-implica que alguien va a volver, pero no dice quien ni cuando, asi que en
-la practica nadie vuelve. Si el trabajo pendiente importa de verdad, es un
-issue con dueño, no un comentario. Si no importa lo suficiente como para
-ser un issue, tampoco importa lo suficiente como para quedar como TODO
-permanente en el codigo - borralo.
-
-## Ejemplo: una eleccion que parece un error hasta que se explica
-
-```ts
-✗ // busca el usuario
-  function findUser(id: string) {
-    for (const user of allUsers) {
-      if (user.id === id) return user
-    }
-    return null
-  }
-  // busqueda lineal sobre un array - alguien que lo lea va a asumir
-  // que es descuido y lo va a "arreglar" a un Map, rompiendo el orden
-  // de iteracion que otra parte del codigo depende
-
-✓ // lineal a proposito: `allUsers` tiene <50 elementos en producción
-  // (limite de negocio) y necesitamos el orden de inserción para el
-  // desempate de "primer usuario creado" en resolveOwnership() - un
-  // Map<id, user> pierde ese orden
-  function findUser(id: string) {
-    for (const user of allUsers) {
-      if (user.id === id) return user
-    }
-    return null
-  }
-```
-
-Sin el comentario, la próxima persona que optimiza "por las dudas" rompe
-un invariante que no podía ver. El comentario no explica qué hace el
-loop (eso ya lo dice el código) - explica por qué esta forma, aparentemente
-subóptima, es la correcta.
-
-## Codigo comentado
-
-Codigo comentado ("por las dudas") no es documentacion, es basura que
-el sistema de control de versiones ya resuelve mejor - `git log`/`git blame`
-recuperan cualquier version anterior sin ensuciar el archivo actual. Si
-borraste algo y lo dejaste comentado "por si hace falta despues", borralo
-de verdad.
+## References
+- `references/comments-examples.md` — ejemplos completos antes/despues (nombre vs comentario, ADR vs comentario que envejece, findUser con busqueda lineal a proposito).

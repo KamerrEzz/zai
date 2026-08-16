@@ -1,8 +1,9 @@
 {
   "name": "zai",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "private": true,
   "type": "module",
+  "license": "MIT",
   "description": "ZAI - entorno de desarrollo personal sobre OpenCode",
   "scripts": {
     "test": "vitest run",

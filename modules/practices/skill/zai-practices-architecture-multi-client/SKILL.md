@@ -1,82 +1,39 @@
 ---
 name: zai-practices-architecture-multi-client
-description: Use ONLY when the same backend serves more than one client app (a web app and a React Native app, for example) and you need to decide whether to keep one generic API or split into a BFF per client. Do not use for internal layering inside the backend itself (see zai-practices-architecture-layering) or for whether to separate that backend into its own deployable service (see zai-practices-architecture-service-boundaries).
+description: "Trigger: BFF, backend for frontend, multi-cliente, api-web, api-mobile. Decide entre una API generica y un BFF por cliente."
+license: MIT
+metadata:
+  author: KamerrEzz
+  version: "1.0"
 ---
 
-# Backend multi-cliente: una API, varios frontends
+## Activation Contract
+Load when the same backend serves more than one client app (e.g. a web app and a React Native app) and you must decide between one generic API or a BFF per client. Do not use for internal layering inside the backend (`zai-practices-architecture-layering`) or for whether to separate that backend into its own deployable service (`zai-practices-architecture-service-boundaries`).
 
-Si el mismo backend va a servir una web (Next.js) **y** una app (React
-Native), el backend no le pertenece a ninguno de los dos clientes - vive
-como su propio servicio, con su propio ciclo de deploy, y ninguno de los
-frontends le agrega lógica de negocio directamente (nada de escribir a la
-base de datos desde Server Actions de Next.js si React Native también
-necesita ese mismo dato/mutación - eso duplica la regla de negocio en dos
-lugares que se van a desincronizar).
+## Hard Rules
+- El backend no le pertenece a ningun cliente: ningun frontend escribe logica de negocio directamente (nada de mutar la DB desde Server Actions de Next.js si otro cliente necesita esa misma mutacion).
+- Un BFF es una capa de agregacion/formato, no un segundo backend; si toma decisiones de negocio (precios, validaciones), esa logica se esta duplicando respecto al dominio compartido.
+- No arranques con BFFs separados "por si acaso" — es el mismo error que separar microservicios sin razon operacional concreta.
+- El contrato compartido entre clientes vive en un solo lugar (`packages/shared-types`, ver `zai-practices-project-structure`) y se testea como tal (`zai-practices-testing`).
 
-Esto es exactamente la condición que dispara `zai-stack-api-layer`
-(tRPC vs Server Actions + Zod): con **un solo consumidor** (solo la web),
-Server Actions alcanza y separar el backend es prematuro. En el momento
-que React Native (o cualquier segundo cliente) entra en escena, ya hay
-más de un consumidor tipado del mismo backend - ahí es cuando tRPC (o un
-backend HTTP/REST explícito con Express/NestJS, ver `zai-stack-backend-framework`)
-deja de ser una capa de más y pasa a ser la forma de no duplicar lógica.
-El contrato compartido entre ambos clientes vive en un solo lugar (ver
-`zai-practices-project-structure`, `packages/shared-types`) y se testea
-como tal (ver `zai-practices-testing`, sección de testing de contrato).
+## Decision Gates
+| Situacion | Accion |
+|---|---|
+| Un solo consumidor (solo web) | Server Actions alcanza; no separar backend todavia |
+| 2+ consumidores tipados (web + mobile) | Backend propio (tRPC o REST explicito, ver `zai-stack-api-layer` / `zai-stack-backend-framework`) |
+| Necesidades de forma/agregacion no divergen mucho | Una API generica con query params / seleccion de campos |
+| API generica llena de flags (`?mobile=true`) o campos no usados por un cliente | BFF por cliente (`api-web/`, `api-mobile/`) |
 
-## BFF (Backend For Frontend): cuándo un solo backend no alcanza
+## Execution Steps
+1. Confirmar cuantos clientes tipados consumen el mismo backend.
+2. Si es uno solo, evitar separar backend o crear un BFF todavia.
+3. Si son 2+, revisar si la API generica ya acumula flags o payloads que un cliente no usa.
+4. Si diverge de verdad, diseñar un BFF fino por cliente que solo agrega/formatea, llamando a los mismos servicios de dominio compartidos.
+5. Ver `references/bff-example.md` para el ejemplo de dos BFFs sobre el mismo dominio.
 
-Con web + mobile compartiendo una API, hay dos formas de resolver que
-cada cliente necesita datos con forma distinta (la web quiere un payload
-grande con todo precargado para un dashboard; mobile quiere respuestas
-chicas para no gastar datos móviles):
+## Output Contract
+Indicar si corresponde API unica o BFF por cliente, con la señal concreta (numero de consumidores, divergencia de payload, flags) que lo justifica, y marcar si el BFF propuesto esta agregando logica de negocio (anti-patron a corregir).
 
-- **Una sola API genérica**, y cada cliente pide/filtra lo que necesita
-  (query params, un endpoint GraphQL con selección de campos). Es lo más
-  simple - úsalo mientras las necesidades de web y mobile no diverjan
-  demasiado.
-- **Un BFF por cliente** (`api-web/`, `api-mobile/`) - cada uno es una
-  capa fina que llama a los mismos servicios de dominio pero arma la
-  respuesta a la medida de su cliente. Se justifica cuando las
-  necesidades de forma/agregación divergen tanto que la API genérica
-  termina llena de flags (`?mobile=true`) o de campos que un cliente
-  nunca usa - el BFF absorbe esa divergencia sin ensuciar el dominio
-  compartido.
-
-Un BFF **no** es un segundo backend con lógica de negocio propia - es una
-capa de agregación/formato. Si un BFF empieza a tomar decisiones de
-negocio (calcular precios, validar reglas), esa lógica se está duplicando
-respecto al dominio compartido, exactamente el problema que un BFF existe
-para evitar.
-
-```ts
-// api-web/dashboard.ts - BFF web: agrega y precarga todo de una
-async function getDashboard(userId: string) {
-  const [orders, notifications, billing] = await Promise.all([
-    domainOrders.listRecent(userId),
-    domainNotifications.listUnread(userId),
-    domainBilling.getSummary(userId),
-  ])
-  return { orders, notifications, billing } // un solo payload grande, pensado para la web
-}
-
-// api-mobile/dashboard.ts - BFF mobile: mismo dominio, respuesta chica
-async function getDashboardSummary(userId: string) {
-  const orders = await domainOrders.listRecent(userId, { limit: 3 })
-  return { orderCount: orders.length, lastOrder: orders[0] ?? null } // sin billing completo, sin notifications
-}
-```
-
-Los dos BFFs llaman a los mismos `domainOrders`/`domainNotifications`
-/`domainBilling` - la regla de negocio sigue viviendo en un solo lugar,
-solo cambia cómo se empaqueta la respuesta para cada cliente.
-
-No arranques con BFFs separados "por si acaso" - es exactamente el mismo
-error que separar microservicios sin la razón operacional concreta (ver
-`zai-practices-architecture-service-boundaries`). Empezá con una API,
-migrá a BFF cuando la divergencia sea real y te esté doliendo.
-
-## Fuentes
-
-- [Backends For Frontends - Sam Newman](https://samnewman.io/patterns/architectural/bff/) - el writeup original que acuñó el patrón BFF.
-- [BFF @ SoundCloud - ThoughtWorks](https://www.thoughtworks.com/insights/blog/bff-soundcloud) - implementación real de BFF para web + mobile en una empresa real.
+## References
+- `references/bff-example.md` — dos implementaciones BFF (`api-web`/`api-mobile`) llamando al mismo dominio compartido.
+- `references/multi-client-sources.md` — relacion con `zai-stack-api-layer` y fuentes (BFF pattern, caso SoundCloud).
